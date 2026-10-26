@@ -1,0 +1,3537 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+
+/* ─── Tokens & Reset ─── */
+:root {
+  /* Dark, warm foundation */
+  --color-obsidian: #0B0B0C;
+  --color-dark-warm: #161513;
+  --color-ash: #242224;
+
+  /* Emotional story color codes */
+  --story-lime: #C7F464;            /* "performing okay": FINE., notification, smile :) */
+  --story-lime-drained: #75736c;    /* drains to grey during "Completely drained" */
+  --story-amber: #E29338;           /* warmth: only in lamp, returns with hands */
+  --story-cream: #FAF6EE;           /* warm cream ending rather than pure white */
+  --story-ink: #161513;             /* deep sketch ink tone */
+  --story-paper: #E6E1D8;           /* warm paper tone */
+
+  --color-bone: #F3EFE9;
+  --color-warm-accent: #d4a574;
+  --color-hope-cream: #f5e6d3;
+
+  --fg: #e8e5df;
+  --bg: #0b0b0c;
+
+  color: #e8e5df;
+  background: #0b0b0c;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-synthesis: none;
+}
+
+/* ── Typographic Jobs ── */
+/* 1. Serif italic: What he says out loud ("I'm fine.", "all good :)") */
+.type-speech, em.spoken-word {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* 2. Mono: What he thinks (thought cloud, ASCII mind, internal loop) */
+.type-thought, .code-thought {
+  font-family: 'DM Mono', monospace;
+  font-style: normal;
+}
+
+/* 3. Small sans caps: The narrator ("He keeps working.", scene titles) */
+.type-narrator, .narrator-caps {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  font-weight: 500;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+  background: #0b0b0c;
+}
+
+.story {
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: #0b0b0c;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.eyebrow {
+  color: #aaa59d;
+  font: 500 10px/1.2 'DM Mono', monospace;
+  letter-spacing: .14em;
+  margin: 0;
+}
+
+.eyebrow span {
+  margin-left: 16px;
+  opacity: .6;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-size: clamp(2.6rem, 6vw, 6.5rem);
+  line-height: .93;
+  font-weight: 500;
+  letter-spacing: -.055em;
+}
+
+h1 em,
+h2 em {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── Story Progress ─── */
+.story-progress {
+  z-index: 10;
+  position: fixed;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #bbb5ac;
+  font: 9px 'DM Mono', monospace;
+  writing-mode: vertical-rl;
+  letter-spacing: .12em;
+  mix-blend-mode: screen;
+}
+
+.progress-track {
+  width: 1px;
+  height: 76px;
+  background: #454448;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-track i {
+  display: block;
+  position: absolute;
+  inset: 0;
+  transform-origin: top;
+  background: #e4e0d7;
+}
+
+
+/* ═══════════════════════════════════════════
+   SCENE 01 — INTRO / CRT
+   Dominant CRT monitor as experimental digital artwork.
+   Power-on sequence, grain, scanlines, phosphor glow, glitch title.
+   ═══════════════════════════════════════════ */
+
+.intro {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #07070a;
+  isolation: isolate;
+  cursor: default;
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+/* ─── CRT Room — obsidian chamber behind the monitor ─── */
+.crt-room {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 42%,
+    #111117 0%,
+    #07070a 65%
+  );
+  z-index: 0;
+}
+
+.crt-room-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+}
+
+/* ─── CRT Bezel ─── */
+.crt-bezel {
+  position: relative;
+  z-index: 2;
+  width: clamp(300px, 72vw, 920px);
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(145deg, #1f1e22 0%, #17161a 55%, #0f0e12 100%);
+  border-radius: clamp(10px, 1.5vw, 20px);
+  box-shadow:
+    0 0 0 3px #2a2830,
+    0 0 0 5px #0c0b0e,
+    0 40px 90px rgba(0,0,0,0.85),
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 -2px 0 rgba(0,0,0,0.7);
+  padding: clamp(14px, 2.5%, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.5%, 18px);
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* ─── Screen face (the curved display area) ─── */
+.crt-screen-face {
+  position: relative;
+  flex: 1;
+  background: #04040a;
+  border-radius: clamp(6px, 1vw, 12px);
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 60px rgba(0,0,0,0.9),
+    inset 0 0 3px rgba(199,244,100,0.04),
+    0 0 30px rgba(0,0,0,0.6);
+}
+
+/* ─── Inner content — scales from ~0 on power-on ─── */
+.crt-screen-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 38%, #1a1e14 0%, #0c0e08 55%, #030405 100%);
+  transform-origin: center center;
+  overflow: hidden;
+}
+
+/* ─── Canvas layers ─── */
+.crt-grain-canvas,
+.crt-tear-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.crt-grain-canvas {
+  mix-blend-mode: overlay;
+}
+
+.crt-tear-canvas {
+  mix-blend-mode: screen;
+}
+
+/* ─── Scanlines ─── */
+.crt-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.22) 2px,
+    rgba(0, 0, 0, 0.22) 4px
+  );
+  pointer-events: none;
+  z-index: 8;
+  animation: crt-scanline-drift 14s linear infinite;
+}
+
+@keyframes crt-scanline-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 0 60px; }
+}
+
+/* ─── Phosphor glow — pointer-reactive ─── */
+.crt-phosphor {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(199,244,100,0.055) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 7;
+  mix-blend-mode: screen;
+}
+
+/* ─── Barrel / curvature overlay ─── */
+.crt-curvature {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 65%,
+    rgba(0,0,0,0.35) 100%
+  );
+  pointer-events: none;
+  z-index: 9;
+}
+
+/* ─── Vignette (dark edges) ─── */
+.crt-vignette {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 120px rgba(0,0,0,0.80);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 40%,
+    rgba(0,0,0,0.60) 100%
+  );
+  pointer-events: none;
+  z-index: 11;
+}
+
+/* ─── Bezel chrome reflection strip ─── */
+.crt-reflection {
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.12) 40%,
+    rgba(255,255,255,0.18) 50%,
+    rgba(255,255,255,0.12) 60%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ─── Speaker grille at the bottom of the bezel ─── */
+.crt-bottom-grille {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  height: clamp(6px, 1.2%, 12px);
+  padding: 0 10%;
+}
+
+.crt-bottom-grille span {
+  display: block;
+  width: 2px;
+  flex-shrink: 0;
+  height: 100%;
+  background: #2a2830;
+  border-radius: 1px;
+}
+
+/* ─── CRT Screen Content ─── */
+.crt-content {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: clamp(16px, 4%, 48px);
+  gap: clamp(10px, 2vh, 24px);
+  width: 100%;
+  height: 100%;
+}
+
+/* Kicker */
+.crt-eyebrow {
+  position: absolute;
+  top: clamp(12px, 3%, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  color: #7ea85e;
+  opacity: 0.75;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  z-index: 6;
+}
+
+/* Title wrapper (flicker target) */
+.crt-title-wrap {
+  position: relative;
+  z-index: 6;
+}
+
+/* Overline above title */
+.crt-overline {
+  margin: 0 0 clamp(10px, 2.5vh, 22px);
+  color: #8aaa6a;
+  font: 500 9px/1 'DM Mono', monospace;
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+}
+
+/* Main title */
+.crt-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05em;
+  line-height: 0.88;
+  margin: 0;
+  text-shadow:
+    0 0 40px rgba(199,244,100,0.22),
+    0 0 80px rgba(199,244,100,0.08);
+}
+
+.crt-title-im {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: clamp(2.8rem, 8vw, 8.5rem);
+  color: #e8e4da;
+  letter-spacing: 0.06em;
+}
+
+.crt-title-fine {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(3.6rem, 11vw, 12rem);
+  color: #C7F464;
+  letter-spacing: -0.02em;
+  text-shadow:
+    0 0 30px rgba(199,244,100,0.55),
+    0 0 60px rgba(199,244,100,0.22),
+    0 0 100px rgba(199,244,100,0.08);
+}
+
+/* Deck line */
+.crt-deck {
+  margin: 0;
+  color: #aaa89e;
+  font: 10px/1.5 'DM Mono', monospace;
+  letter-spacing: 0.08em;
+  position: absolute;
+  bottom: clamp(44px, 8%, 72px);
+  z-index: 6;
+}
+
+/* Scroll cue */
+.scroll-cue {
+  position: absolute;
+  bottom: clamp(14px, 3%, 24px);
+  right: clamp(12px, 3%, 28px);
+  z-index: 6;
+  color: #7ea85e;
+  font: 9px 'DM Mono', monospace;
+  letter-spacing: 0.12em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.8;
+}
+
+.scroll-cue-line {
+  display: block;
+  width: 1px;
+  height: 24px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+/* ─── Portal dissolve overlay (restrained dark CRT dissolve + green phosphor bloom) ─── */
+.crt-portal-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(199, 244, 100, 0.16) 0%, rgba(10, 10, 13, 0.96) 65%, #030405 100%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* Scanline drift animation */
+@keyframes crt-scanline-drift-alt {
+  from { background-position: 0 0; }
+  to   { background-position: 0 60px; }
+}
+
+/* ─── Reduced-motion: CRT static state ─── */
+@media (prefers-reduced-motion: reduce) {
+  .crt-screen-inner { transform: scaleY(1) !important; opacity: 1 !important; }
+  .crt-title-wrap   { opacity: 1 !important; }
+  .crt-eyebrow, .crt-deck, .scroll-cue { opacity: 1 !important; transform: none !important; }
+  .crt-scanlines    { animation: none; }
+}
+
+/* ─── CRT mobile scale ─── */
+@media (max-width: 680px) {
+  .crt-bezel {
+    width: 92vw;
+  }
+  .crt-title-im   { font-size: clamp(2.2rem, 14vw, 5rem); }
+  .crt-title-fine { font-size: clamp(2.8rem, 18vw, 7rem); }
+}
+
+/* ═══════════════════════════════════════════
+   SCENE 04 — ANXIETY VISUALIZATION
+   Scribble aesthetic, rough visualization of anxiety.
+   Text morphs to image, ASCII background, heads swirl.
+   Smooth → glitchy transition as intensity increases.
+   ═══════════════════════════════════════════ */
+
+.anxiety-scene {
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, #1a1815 0%, #0a0a0c 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ASCII background canvas */
+.anxiety-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+/* SVG visualization container */
+.anxiety-visualization {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Anxiety heads */
+.anxiety-head {
+  fill: #8b5a5a;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 8px rgba(139, 90, 90, 0.6));
+}
+
+.head-1, .head-2, .head-3, .head-4, .head-5 {
+  transform-origin: center;
+}
+
+/* Thought bubbles */
+.thought-bubbles circle {
+  fill: #1d1c21;
+  stroke: #5b565d;
+  stroke-width: 1;
+  opacity: 0.9;
+}
+
+.bubble-text {
+  font: 11px 'DM Mono';
+  fill: #aaa4a3;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+/* Vortex rings */
+.vortex-ring {
+  fill: none;
+  stroke: #8b5a5a;
+  stroke-width: 2;
+  opacity: 0.4;
+}
+
+.vortex-1 {
+  animation: vortexSpin 8s linear infinite;
+}
+
+.vortex-2 {
+  animation: vortexSpin 12s linear infinite reverse;
+}
+
+.vortex-3 {
+  animation: vortexSpin 16s linear infinite;
+}
+
+@keyframes vortexSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Anxiety copy */
+.anxiety-copy {
+  position: absolute;
+  left: clamp(52px, 12vw, 16%);
+  bottom: clamp(45px, 11vh, 115px);
+  z-index: 2;
+  color: #c4bdb3;
+}
+
+.anxiety-copy h2 {
+  font-size: clamp(2rem, 4.5vw, 5.3rem);
+  margin: 0 0 12px 0;
+  color: #e0d9cc;
+}
+
+.anxiety-copy p {
+  font-size: clamp(.85rem, 1.2vw, 1rem);
+  color: #a7a2a0;
+  margin: 0;
+}
+
+
+/* ═══════════════════════════════════════════
+   SCENE 01.5 — INTERLUDE
+   Quiet editorial pause between home and room.
+   ═══════════════════════════════════════════ */
+
+.interlude {
+  opacity: 0;
+  background: #0a0a0c;
+  color: #e7e3db;
+}
+
+.interlude:before {
+  content: "";
+  position: absolute;
+  width: min(52vw, 760px);
+  aspect-ratio: 1;
+  border: 1px solid #36343a;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 130px #25232b44;
+}
+
+.interlude>.eyebrow {
+  position: absolute;
+  left: clamp(42px, 10.5vw, 170px);
+  top: clamp(36px, 7vh, 82px);
+}
+
+.interlude-copy {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(75vw, 880px);
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.interlude-copy h2 {
+  font-size: clamp(2.8rem, 6.3vw, 7rem);
+  line-height: .88;
+}
+
+.interlude-copy p {
+  max-width: 300px;
+  margin: 27px auto 0;
+  color: #aaa59d;
+  font-size: clamp(.85rem, 1.2vw, 1rem);
+  line-height: 1.5;
+}
+
+.interlude-divider {
+  display: block;
+  width: 36px;
+  height: 1px;
+  background: #5a5650;
+  margin: 22px auto;
+  border: 0;
+}
+
+.interlude-foot {
+  position: absolute;
+  bottom: clamp(30px, 5vw, 64px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: #98938c;
+  font: 9px 'DM Mono', monospace;
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
+
+
+/* ═══════════════════════════════════════════
+   SCENE 02 — LIVING ROOM
+   Cinematic moody dark interior with realistic silhouettes,
+   volumetric lighting, grounded acoustic guitar, and animated static TV.
+   Camera zooms toward TV screen with immersive depth.
+   ═══════════════════════════════════════════ */
+
+.room-wrap {
+  background: radial-gradient(circle at 60% 45%, #0e1017 0%, #06070a 85%);
+  color: #e5e2da;
+}
+
+.room-wrap:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 75% 55%, rgba(140, 170, 225, 0.07), transparent 65%);
+}
+
+.room-index {
+  position: absolute;
+  z-index: 2;
+  top: clamp(24px, 4vw, 48px);
+  left: clamp(32px, 5vw, 64px);
+  color: #bdb8b0;
+}
+
+/* Room copy is hidden — the interlude carries the emotional copy */
+.room-copy {
+  display: none;
+}
+
+.living-room {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a0d;
+}
+
+/* Transition overlay — dark dissolve */
+.room-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 11, 0.95);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+
+/* ═══════════════════════════════════════════
+   WORKSTATION SCENE — Spatial parallax system
+   Three depth layers: BG room / Character / Desk POV
+   Pointer-driven camera look-around in EXPLORE stage.
+   ═══════════════════════════════════════════ */
+
+/* ─── World container — clips all layers ─── */
+.ws-world {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #0a0a0d;
+  /* Perspective context for depth layers */
+  perspective: 1000px;
+  transform-style: flat;
+}
+
+/* ─── Common layer base ─── */
+.ws-bg-layer,
+.ws-mid-layer,
+.ws-char-layer,
+.ws-desk-layer {
+  position: absolute;
+  inset: -8%;          /* bleed so parallax movement never reveals edges */
+  width: 116%;
+  height: 116%;
+  will-change: transform;
+  transition: none;    /* transform driven by rAF loop, not CSS */
+}
+
+/* ─── Background layer: room walls, window, night ─── */
+.ws-bg-layer {
+  z-index: 1;
+}
+
+.ws-bg-layer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  filter: brightness(0.6) saturate(0.7) contrast(1.05);
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Fine grain on background */
+.ws-layer-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  pointer-events: none;
+}
+
+/* ─── Mid layer: atmospheric depth separator ─── */
+.ws-mid-layer {
+  z-index: 2;
+}
+
+.ws-mid-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 70%,
+    rgba(10, 10, 13, 0) 25%,
+    rgba(10, 10, 13, 0.55) 80%
+  );
+}
+
+/* ─── Desk layer: first-person POV & table ─── */
+.ws-desk-layer {
+  z-index: 2;
+}
+
+.ws-desk-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  filter: brightness(0.90) contrast(1.06) saturate(0.82);
+  user-select: none;
+  pointer-events: none;
+  display: block;
+}
+
+/* ─── Character layer: back-of-head establishing shot sitting at desk ─── */
+.ws-char-layer {
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* SVG overlay for desk layer */
+.ws-desk-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ─── Workstation Interactive Elements (Pure Tactile Response) ─── */
+.ws-desk-interactive {
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
+}
+
+/* Tactile responses on hover/focus */
+.ws-desk-photo {
+  transition: filter 0.35s ease;
+}
+
+.ws-desk-photo:hover,
+.ws-desk-photo:focus-visible {
+  filter: drop-shadow(0 0 10px rgba(212, 165, 116, 0.45));
+}
+
+.ws-desk-note {
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.3, 1), filter 0.28s ease;
+}
+
+.ws-desk-note:hover,
+.ws-desk-note:focus-visible {
+  transform: translateY(-3px) rotate(-0.5deg);
+  filter: drop-shadow(1px 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.ws-desk-lamp-switch {
+  transition: filter 0.25s ease;
+}
+
+.ws-desk-lamp-switch:hover ellipse,
+.ws-desk-lamp-switch:focus-visible ellipse {
+  filter: drop-shadow(0 0 5px rgba(255, 230, 160, 0.85));
+}
+
+.ws-desk-coffee {
+  transition: filter 0.3s ease;
+}
+
+.ws-desk-coffee:hover,
+.ws-desk-coffee:focus-visible {
+  filter: drop-shadow(0 0 8px rgba(212, 165, 116, 0.3));
+}
+
+.ws-desk-laptop {
+  transition: filter 0.3s ease;
+}
+
+.ws-desk-laptop:hover,
+.ws-desk-laptop:focus-visible {
+  filter: drop-shadow(0 0 10px rgba(199, 244, 100, 0.25));
+}
+
+/* ─── Gentle Lamp Dimmer Overlay (Toggled from Switch) ─── */
+.ws-lamp-dimmer {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ws-lamp-dimmer.is-dimmed {
+  opacity: 0.68;
+}
+
+/* ─── Ambient Coffee Steam Wisps ─── */
+.ws-coffee-steam-group {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.38;
+  transition: opacity 0.4s ease;
+}
+
+.ws-steam-wisp {
+  fill: none;
+  stroke: rgba(225, 218, 208, 0.28);
+  stroke-linecap: round;
+  filter: blur(2.2px);
+  stroke-dasharray: 45 150;
+  animation: wsSteamRise 8.5s ease-in-out infinite;
+}
+
+.ws-steam-1 {
+  animation-duration: 8.0s;
+  animation-delay: 0s;
+  stroke-width: 2.2;
+}
+
+.ws-steam-2 {
+  animation-duration: 9.6s;
+  animation-delay: -3.2s;
+  stroke-width: 1.8;
+}
+
+.ws-steam-3 {
+  animation-duration: 8.8s;
+  animation-delay: -5.5s;
+  stroke-width: 2.0;
+}
+
+@keyframes wsSteamRise {
+  0% {
+    stroke-dashoffset: 190;
+    opacity: 0;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0.20;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+    transform: translateY(-44px) scaleX(1.2);
+  }
+}
+
+/* ─── Workstation Room Darkness & Screen Glow (Toggled by Lamp) ─── */
+.ws-room-darkness {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 75% 65% at 46% 42%,
+    rgba(6, 7, 10, 0.45) 0%,
+    rgba(5, 6, 9, 0.82) 45%,
+    rgba(3, 4, 6, 0.94) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ws-room-darkness.is-dark {
+  opacity: 1;
+}
+
+.ws-laptop-glow {
+  position: absolute;
+  left: 34%;
+  top: 30%;
+  width: 25%;
+  height: 30%;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(199, 244, 100, 0.16) 0%, transparent 70%);
+  opacity: 0;
+  mix-blend-mode: screen;
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 3;
+}
+
+.ws-laptop-glow.is-active {
+  opacity: 1;
+}
+
+/* ─── Ambient Phone Glow on Desk when Lamp is Dimmed ─── */
+.ws-phone-ambient-glow {
+  position: absolute;
+  left: 80.25%;
+  top: 80.35%;
+  transform: translate(-50%, -50%);
+  width: 18%;
+  height: 18%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(143, 224, 58, 0.16) 0%, rgba(143, 224, 58, 0.05) 45%, transparent 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: wsPhoneGlowBreathe 3.4s ease-in-out infinite alternate;
+}
+
+.ws-phone-ambient-glow.is-active {
+  opacity: 0.55;
+}
+
+@keyframes wsPhoneGlowBreathe {
+  0%   { transform: scale(0.95); opacity: 0.50; }
+  100% { transform: scale(1.05); opacity: 0.70; }
+}
+
+/* ─── Phone Screen Face & Subtle Glow in Dark ─── */
+.ws-phone-screen-face {
+  opacity: 0.10;
+  transition: opacity 0.45s ease, filter 0.45s ease;
+}
+
+.ws-room-darkness.is-dark ~ .ws-desk-svg .ws-phone-screen-face,
+.ws-phone-hit:hover .ws-phone-screen-face {
+  opacity: 0.22;
+  filter: drop-shadow(0 0 6px rgba(143, 224, 58, 0.45)) drop-shadow(0 0 14px rgba(143, 224, 58, 0.2));
+}
+
+/* ─── In-world Minimal Story Whisper (Clean single-line micro tag on hover) ─── */
+.ws-story-whisper {
+  position: absolute;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 10, 14, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(243, 239, 233, 0.14);
+  border-radius: 999px;
+  padding: 6px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  animation: wsStoryWhisperFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  white-space: nowrap;
+}
+
+@keyframes wsStoryWhisperFade {
+  from {
+    opacity: 0;
+    transform: translate(var(--tx, -50%), -95%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(var(--tx, -50%), -110%) scale(1);
+  }
+}
+
+/* ─── Clicked Expanded Story Card (Rich emotional storytelling) ─── */
+.ws-story-card {
+  position: absolute;
+  z-index: 30;
+  max-width: clamp(280px, 24vw, 380px);
+  width: max-content;
+  background: rgba(12, 12, 16, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 239, 233, 0.18);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translate(var(--tx, -50%), -106%) scale(0.96);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.ws-story-card.is-visible {
+  opacity: 1;
+  transform: translate(var(--tx, -50%), -115%) scale(1);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ws-story-card.is-fading {
+  opacity: 0 !important;
+  transform: translate(var(--tx, -50%), -107%) scale(0.96) !important;
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  pointer-events: none !important;
+}
+
+.ws-story-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ws-story-close-btn {
+  background: none;
+  border: none;
+  color: #88847e;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.18s, background 0.18s;
+}
+
+.ws-story-close-btn:hover {
+  color: #FAF6EE;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ws-story-card-text {
+  font: 400 15px/1.55 'DM Sans', -apple-system, sans-serif;
+  color: #F3EFE9;
+  letter-spacing: 0.01em;
+  margin-bottom: 8px;
+}
+
+.ws-story-card-sub {
+  font: italic 12.5px/1.4 'Playfair Display', Georgia, serif;
+  color: #aba59c;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  padding-top: 8px;
+}
+
+.ws-story-tag {
+  font: 500 10.5px/1 'DM Mono', monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--story-accent, #d4a574);
+}
+
+.ws-story-dot {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 11px;
+}
+
+.ws-story-text {
+  font: 400 13px/1.3 'DM Sans', -apple-system, sans-serif;
+  color: #F3EFE9;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Phone Notification Glow (Restrained, breathing on phone screen only) ─── */
+.ws-phone-glow-svg {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+
+.ws-phone-glow-svg.ws-phone-notified {
+  opacity: 0.45;
+  animation: wsPhoneBreathe 3.6s ease-in-out infinite;
+}
+
+.ws-room-darkness.is-dark ~ .ws-desk-svg .ws-phone-glow-svg {
+  opacity: 0.60 !important;
+  filter: drop-shadow(0 0 10px rgba(143, 224, 58, 0.45)) drop-shadow(0 0 22px rgba(143, 224, 58, 0.2));
+}
+
+@keyframes wsPhoneBreathe {
+  0%, 100% { opacity: 0.20; }
+  50%       { opacity: 0.45; }
+}
+
+/* ─── Notification dot on phone ─── */
+.ws-notif-dot {
+  pointer-events: none;
+  animation:
+    wsNotifAppear 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    wsNotifBlink 2.4s ease-in-out 0.45s infinite;
+}
+
+@keyframes wsNotifAppear {
+  from { opacity: 0; transform: scale(0); transform-box: fill-box; transform-origin: center; }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes wsNotifBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* ─── Phone hit area ─── */
+.ws-phone-hit {
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
+}
+
+@media (hover: hover) {
+  .ws-phone-hit:hover .ws-phone-glow-svg,
+  .ws-phone-hit:focus-visible .ws-phone-glow-svg {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 12px rgba(199, 244, 100, 0.6));
+  }
+}
+
+/* ─── World grain overlay (visible always) ─── */
+.ws-world-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  pointer-events: none;
+  animation: wsGrainShift 0.09s steps(4, end) infinite;
+}
+
+@keyframes wsGrainShift {
+  0%   { background-position: 0   0;   }
+  25%  { background-position: 22px 8px; }
+  50%  { background-position: -8px 16px; }
+  75%  { background-position: 14px -4px; }
+  100% { background-position: 0   0;   }
+}
+
+/* ─── Depth vignette (world-level) ─── */
+.ws-world-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    transparent 35%,
+    rgba(7, 7, 10, 0.72) 100%
+  );
+  pointer-events: none;
+}
+
+/* ─── Editorial character caption (previous serif italic, clean text shadow, no bulky badge) ─── */
+.ws-caption {
+  position: absolute;
+  z-index: 12;
+  bottom: clamp(36px, 6vh, 80px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: #FAF6EE;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(20px, 1.8vw, 27px);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  background: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.95), 0 0 32px rgba(0, 0, 0, 0.8);
+}
+
+/* ─── Refined, Discreet In-World Phone Cue (Subtle, sleek, understated) ─── */
+.ws-phone-discreet-cue {
+  position: absolute;
+  z-index: 12;
+  bottom: clamp(24px, 4.5vh, 48px);
+  right: clamp(24px, 4.5vw, 64px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(12, 13, 17, 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(199, 244, 100, 0.28);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  color: #e5e2db;
+  font: 400 13px/1 'DM Sans', sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+  outline: none;
+}
+
+.ws-phone-discreet-cue:hover,
+.ws-phone-discreet-cue:focus-visible {
+  border-color: rgba(199, 244, 100, 0.65);
+  background: rgba(16, 18, 24, 0.92);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.ws-phone-discreet-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #C7F464;
+  box-shadow: 0 0 6px rgba(199, 244, 100, 0.8);
+  animation: wsPhoneDotPulse 2.8s ease-in-out infinite;
+}
+
+/* ─── Phone notification pulse (kept for legacy) ─── */
+.phone-notification-pulse {
+  animation: notificationPulse 2s ease-in-out infinite;
+}
+
+@keyframes notificationPulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(1.15); opacity: 0.6; }
+}
+
+/* ─── Mobile adjustments ─── */
+@media (max-width: 768px) {
+  .ws-char-img    { width: 85%; }
+  .ws-explore-hint { font-size: 8px; letter-spacing: 0.1em; }
+  .ws-skip-btn { font-size: 8px; padding: 7px 12px; }
+}
+
+
+
+/* ═══════════════════════════════════════════
+   SCENE 03 — THOUGHTS / PHONE
+   Phone with 3D rotation and perspective shift.
+   Anxiety thoughts floating around the phone.
+   ═══════════════════════════════════════════ */
+
+.thoughts {
+  opacity: 0;
+  background: radial-gradient(circle at 50% 48%, #292931, #0e0e11 67%);
+  perspective: 1200px;
+}
+
+/* Dark backdrop that strengthens during rotation */
+.thoughts-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.phone {
+  position: absolute;
+  z-index: 10;
+  width: clamp(180px, 21vw, 290px);
+  aspect-ratio: .5;
+  padding: 9px;
+  border: 5px solid var(--color-oxblood);
+  border-radius: 28px;
+  background: var(--color-ash);
+  box-shadow: 0 25px 70px #0009;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Phone active state — rotates and glows */
+.phone.active {
+  transform: translate(-50%, -50%) rotateZ(-15deg) scale(1.05);
+  box-shadow: 0 0 30px 12px rgba(212, 165, 116, 0.5);
+}
+
+.phone-top {
+  width: 32%;
+  height: 5px;
+  border-radius: 10px;
+  background: #54515a;
+  margin: 3px auto 13px;
+}
+
+.chat {
+  height: calc(100% - 22px);
+  padding: 11px;
+  border-radius: 18px;
+  background: #282730;
+  color: #dcd7ce;
+  font-size: clamp(9px, 1vw, 13px);
+  overflow-y: auto;
+}
+
+.chat small {
+  display: block;
+  color: #88848d;
+  text-align: center;
+  font: 8px 'DM Mono';
+  margin: 6px;
+}
+
+.bubble {
+  padding: 9px 10px;
+  max-width: 80%;
+  line-height: 1.25;
+  margin: 12px 0;
+  border-radius: 12px;
+}
+
+.bubble.other {
+  background: #3b3943;
+}
+
+.bubble.mine {
+  margin-left: auto;
+  color: #1c1c22;
+  background: #c9c4b9;
+  border-bottom-right-radius: 3px;
+}
+
+.typing {
+  color: #8b8790;
+  letter-spacing: 2px;
+}
+
+/* Thought bubbles floating around phone */
+.thought-cloud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #aaa4a3;
+  font: clamp(11px, 1.2vw, 17px) 'DM Mono';
+}
+
+.thought {
+  position: absolute;
+  padding: 8px 12px;
+  border: 1px solid #5b565d;
+  border-radius: 99px;
+  background: #1d1c21aa;
+  opacity: 0;
+}
+
+.thought-0 {
+  left: 15%;
+  top: 32%;
+}
+
+.thought-1 {
+  right: 14%;
+  top: 28%;
+}
+
+.thought-2 {
+  left: 18%;
+  bottom: 25%;
+}
+
+.thought-3 {
+  right: 17%;
+  bottom: 28%;
+}
+
+.thought-4 {
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+}
+
+.thoughts-copy {
+  position: absolute;
+  left: clamp(52px, 12vw, 16%);
+  bottom: clamp(45px, 11vh, 115px);
+}
+
+.thoughts-copy h2 {
+  font-size: clamp(2rem, 4.5vw, 5.3rem);
+}
+
+.thoughts-copy p {
+  color: #a7a2a0;
+  font-size: clamp(.85rem, 1.2vw, 1rem);
+  margin: 15px 0;
+}
+
+.next-note {
+  position: absolute;
+  right: clamp(35px, 7vw, 95px);
+  bottom: clamp(48px, 10vh, 105px);
+  max-width: 130px;
+  color: #aaa5a1;
+  font: 10px/1.6 'DM Mono';
+}
+
+
+/* ─── Keyframes ─── */
+@keyframes screen-flicker {
+  0% {
+    opacity: .35;
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    opacity: .85;
+    transform: translate(-2px, 1px) scale(1.01);
+  }
+
+  100% {
+    opacity: .45;
+    transform: translate(2px, -1px);
+  }
+}
+
+
+/* ─── Mobile ─── */
+@media (max-width: 680px) {
+
+  /* Progress */
+  .story-progress {
+    left: 12px;
+    font-size: 8px;
+  }
+
+  .progress-track {
+    height: 48px;
+  }
+
+  /* Intro */
+  .intro {
+    padding: 28px;
+  }
+
+  .hero-kicker {
+    top: 27px;
+    font-size: 8px;
+  }
+
+  .intro-copy {
+    top: 47%;
+    width: 88vw;
+  }
+
+  .intro-copy h1 {
+    font-size: clamp(3.2rem, 16vw, 5.8rem);
+    gap: clamp(8px, 1.5vw, 20px);
+  }
+
+  .intro-copy .intro-deck {
+    margin-top: 25px;
+    max-width: 200px;
+  }
+
+  .scroll-prompt {
+    font-size: 8px;
+    right: 25px;
+    bottom: 27px;
+  }
+
+  .hero-aside {
+    display: none;
+  }
+
+  /* Interlude */
+  .interlude-copy {
+    width: 86vw;
+  }
+
+  .interlude-copy h2 {
+    font-size: 3.1rem;
+  }
+
+  .interlude>.eyebrow {
+    left: 10%;
+    top: 7%;
+  }
+
+  /* Living room */
+  .room-index {
+    left: 10%;
+    top: 6%;
+    font-size: 8px;
+  }
+
+  .living-room {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .room-note {
+    display: none;
+  }
+
+  .enter-tv {
+    bottom: 9%;
+    font-size: 8px;
+    white-space: nowrap;
+  }
+
+  /* Thoughts */
+  .phone {
+    top: 48%;
+  }
+
+  .thoughts-copy {
+    left: 15%;
+    bottom: 12%;
+  }
+
+  .thoughts-copy h2 {
+    font-size: 2.55rem;
+  }
+
+  .thoughts-copy p,
+  .next-note {
+    display: none;
+  }
+
+  .thought-0 {
+    left: 6%;
+    top: 27%;
+  }
+
+  .thought-1 {
+    right: 5%;
+    top: 30%;
+  }
+
+  .thought-2 {
+    left: 4%;
+    bottom: 29%;
+  }
+
+  .thought-3 {
+    right: 4%;
+    bottom: 34%;
+  }
+
+  .thought-4 {
+    bottom: 23%;
+  }
+}
+
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .story {
+    height: auto;
+    overflow: visible;
+  }
+
+  .scene {
+    position: relative;
+    min-height: 100vh;
+  }
+
+  .room-wrap,
+  .thoughts {
+    opacity: 1 !important;
+  }
+
+  .story-progress {
+    display: none;
+  }
+
+  /* CRT intro — show fully powered on, no animations */
+  .crt-screen-inner { transform: scaleY(1) !important; opacity: 1 !important; }
+  .crt-title-wrap   { opacity: 1 !important; transform: none !important; }
+  .crt-eyebrow, .crt-deck, .scroll-cue { opacity: 1 !important; transform: none !important; }
+  .crt-scanlines    { animation: none; }
+  .crt-grain-canvas, .crt-tear-canvas { display: none; }
+
+  /* Spatial workstation — show all layers immediately, no animations */
+  .ws-bg-layer, .ws-char-layer, .ws-desk-layer { opacity: 1 !important; transform: none !important; }
+  .ws-world { opacity: 1 !important; }
+  .ws-cursor-blink  { animation: none; opacity: 1; }
+  .ws-screen-spill  { animation: none; }
+  .ws-world-grain   { animation: none; }
+  .ws-phone-glow-svg.ws-phone-notified { opacity: 1 !important; animation: none; }
+  .ws-notif-dot     { animation: none; opacity: 1 !important; }
+  /* Show skip button immediately in reduced-motion */
+  .ws-skip-btn      { opacity: 1 !important; display: block !important; }
+
+  .phone {
+    transform: translate(-50%, -44%) !important;
+  }
+
+  .thought {
+    opacity: 1 !important;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SOUND TOGGLE
+   ═══════════════════════════════════════════ */
+.sound-toggle {
+  position: fixed;
+  top: clamp(18px, 3vw, 28px);
+  right: clamp(18px, 3vw, 32px);
+  z-index: 50;
+  background: rgba(36,34,36,0.72);
+  border: 1px solid #3a383e;
+  color: var(--color-bone);
+  font-size: 16px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.sound-toggle:hover {
+  background: rgba(114,31,43,0.55);
+  border-color: var(--color-oxblood);
+  transform: scale(1.08);
+}
+
+
+/* ─── LIVING ROOM ILLUSTRATION LAYOUT ─── */
+
+/* Replace old SVG-only layout with image-based approach */
+.room-illustration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.045);
+  transform-origin: center center;
+  user-select: none;
+  pointer-events: none;
+  filter: contrast(1.04) saturate(0.9);
+}
+
+/* SVG overlay sits on top of the image, perfectly aligned */
+.room-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: scale(1.045);
+  transform-origin: center center;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* ── TV SCREEN ── */
+.tv-hit, .tv-hit * {
+  pointer-events: all;
+  outline: none !important;
+}
+
+.tv-static-screen {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  outline: none !important;
+  filter: contrast(1.2) brightness(1.08);
+}
+
+.tv-scanlines {
+  fill: none;
+  stroke: rgba(0,0,0,0.06);
+  pointer-events: none;
+}
+
+/* Channel overlays — base hidden, active shown */
+.tv-channel-overlay {
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+  outline: none !important;
+}
+
+.tv-channel-overlay.ch-noise {
+  fill: transparent;
+  opacity: 0;
+}
+
+.tv-channel-overlay.ch-lines {
+  fill: none;
+  stroke: rgba(180,200,255,0.35);
+  stroke-width: 6;
+  stroke-dasharray: 0 18;
+  stroke-dashoffset: 0;
+  opacity: 1;
+  animation: scanlineSlide 0.18s linear infinite;
+}
+
+.tv-channel-overlay.ch-geo {
+  fill: rgba(114,31,43,0.22);
+  opacity: 1;
+}
+
+.tv-channel-overlay.ch-blank {
+  fill: #040406;
+  opacity: 0.94;
+}
+
+@keyframes scanlineSlide {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+/* ── GUITAR HIT ── */
+.guitar-hit {
+  pointer-events: all;
+  outline: none;
+}
+
+/* ── PHONE GLOW SPILL — Warm accent glow ── */
+.phone-glow-spill {
+  animation: phoneGlowPulse 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes phoneGlowPulse {
+  0%, 100% {
+    opacity: 0.55;
+    r: 55px;
+  }
+  50% {
+    opacity: 0.85;
+    r: 68px;
+  }
+}
+
+
+/* ═══════════════════════════════════════════
+   SCENE 05 — HANDS & LIGHT TRANSITION
+   Tone shifts from dark anxiety to bright hope.
+   Supportive hands emerge with warm light.
+   ═══════════════════════════════════════════ */
+
+.hands-scene {
+  opacity: 0;
+  background: linear-gradient(135deg, #0a0a0c 0%, #1a1815 50%, #2a2520 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Hands background image */
+.hands-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hands-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+}
+
+/* Light overlay — brightens during transition */
+.hands-light-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 60%, rgba(244, 225, 195, 0.15) 0%, transparent 70%);
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Supportive copy */
+.hands-copy {
+  position: absolute;
+  left: clamp(52px, 12vw, 16%);
+  bottom: clamp(45px, 11vh, 115px);
+  z-index: 3;
+  color: #d4bfad;
+}
+
+.hands-copy h2 {
+  font-size: clamp(2rem, 4.5vw, 5.3rem);
+  margin: 0 0 16px 0;
+  color: #f5e6d3;
+  font-weight: 500;
+}
+
+.hands-copy p {
+  font-size: clamp(.85rem, 1.2vw, 1rem);
+  color: #c4b5a3;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+
+/* Warm accent line */
+.hands-accent {
+  width: clamp(40px, 8vw, 80px);
+  height: 2px;
+  background: linear-gradient(90deg, #d4a574 0%, rgba(212, 165, 116, 0) 100%);
+  opacity: 0;
+}
+
+/* ═══════════════════════════════════════════
+   SCENE 03 — PHASE 3 DESK PHONE & THOUGHTS
+   Match-cut phone, signal interference, thought typography
+   ═══════════════════════════════════════════ */
+
+#phoneScene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  perspective: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.phone-index {
+  position: absolute;
+  top: clamp(24px, 4vw, 48px);
+  left: clamp(32px, 5vw, 64px);
+  z-index: 10;
+  color: #bdb8b0;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* ── Layer 1: Dark Workstation Backdrop (NO blue-grey) ── */
+.phone-scene-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, rgba(18, 17, 15, 0.38) 0%, rgba(10, 10, 9, 0.95) 82%), url('/media/ws-desk.jpg') center center / cover no-repeat;
+  filter: brightness(0.24) contrast(1.24) sepia(0.08);
+  opacity: 1;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+/* ── Spill: Soft phosphor-green light onto the desk behind the phone ── */
+.phone-glow-spill {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) perspective(1200px) rotateX(15deg) rotateY(-8deg) rotateZ(-6deg);
+  width: min(460px, 88vw);
+  height: min(90vh, 820px);
+  background: radial-gradient(ellipse at 50% 50%, rgba(199, 244, 100, 0.22) 0%, rgba(199, 244, 100, 0.05) 55%, transparent 75%);
+  filter: blur(45px);
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+/* ── B. Phase 3 Phone (≈80-85% viewport height, same tilt/perspective as desk art) ── */
+#ph.desk-phone-matchcut, #ph {
+  position: relative;
+  height: min(84vh, 780px);
+  width: min(390px, 84vw);
+  aspect-ratio: 9 / 18;
+  transform: perspective(1200px) rotateX(15deg) rotateY(-8deg) rotateZ(-6deg);
+  transform-origin: center center;
+  background: #141412;
+  border: 3px solid #dcd8ce; /* Inked outline matching desk art */
+  border-radius: 40px;
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 0 0 1px #090908,
+    inset 0 0 0 2px #262622,
+    0 28px 70px rgba(0, 0, 0, 0.95),
+    0 0 95px rgba(199, 244, 100, 0.14);
+  z-index: 3;
+  user-select: none;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Casing top: speaker slit & camera dot */
+.phone-chassis-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 6;
+}
+
+.phone-speaker-slit {
+  width: 50px;
+  height: 4px;
+  background: #080807;
+  border: 1px solid #302f2a;
+  border-radius: 3px;
+}
+
+.phone-camera-dot {
+  width: 6px;
+  height: 6px;
+  background: #060605;
+  border: 1px solid #282823;
+  border-radius: 50%;
+  margin-left: 10px;
+}
+
+/* Casing bottom: home button matching desk art */
+.phone-chassis-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  margin-top: 4px;
+  position: relative;
+  z-index: 6;
+}
+
+.phone-home-button {
+  width: 18px;
+  height: 18px;
+  background: #0c0c0b;
+  border: 1.5px solid #3a3832;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.phone-casing-scratches {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 7;
+  opacity: 0.42;
+}
+
+/* Screen frame enclosing canvas, scanlines, status label & log lines */
+.phone-screen-frame {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  background: #080907;
+  border-radius: 28px;
+  border: 1px solid #242420;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.92);
+}
+
+.phone-screen-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Scanlines and slight barrel curve overlay */
+.phone-crt-scanlines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.35) 3px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.75;
+}
+
+/* Status label in lower-third / status bar: "CONNECTING…" */
+.phone-status-bar {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #8a8880;
+}
+
+.phone-signal-code {
+  color: #6d6b65;
+  font-size: 10px;
+}
+
+.phone-status-label {
+  color: #C7F464;
+  font-weight: 500;
+  text-shadow: 0 0 6px rgba(199, 244, 100, 0.4);
+}
+
+.phone-dots {
+  display: inline-block;
+  width: 14px;
+  text-align: left;
+}
+
+/* Messages container */
+.phone-log-container {
+  position: relative;
+  z-index: 4;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px 16px 20px;
+  gap: 12px;
+}
+
+/* Messages appear as left-aligned monospace log lines, not chat bubbles */
+.mono-log-line {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px; /* Meets requirement: >=16px equivalent for readability */
+  line-height: 1.45;
+  letter-spacing: 0.03em;
+  opacity: 0;
+  transform: translateY(8px);
+  word-break: break-word;
+  max-width: 92%;
+  margin: 0;
+}
+
+.mono-log-line.incoming {
+  align-self: flex-start;
+  color: #e9e6df; /* off-white */
+  border-left: 2px solid rgba(233, 230, 223, 0.65);
+  padding: 4px 8px;
+  background: rgba(14, 14, 12, 0.65);
+  border-radius: 2px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+}
+
+.mono-log-line.reply {
+  align-self: flex-end;
+  text-align: right;
+  color: #C7F464; /* phosphor green */
+  border-right: 2px solid rgba(199, 244, 100, 0.85);
+  padding: 4px 8px;
+  background: rgba(12, 18, 10, 0.72);
+  border-radius: 2px;
+  text-shadow: 0 0 8px rgba(199, 244, 100, 0.45);
+}
+
+/* Typing indicator "…" */
+.mono-log-line.typing-indicator {
+  align-self: flex-start;
+  color: #e9e6df;
+  border-left: 2px solid rgba(233, 230, 223, 0.45);
+  padding: 2px 8px;
+  background: rgba(14, 14, 12, 0.55);
+  letter-spacing: 0.25em;
+  font-weight: bold;
+}
+
+.typing-dots {
+  display: inline-block;
+  animation: typingPulse 0.9s infinite ease-in-out;
+}
+
+@keyframes typingPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.log-arrow {
+  font-weight: 600;
+  opacity: 0.8;
+  margin: 0 4px;
+}
+
+/* Layer d: Glass: scratch overlay, reflection, vignette */
+.phone-glass-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.glass-scratches-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.glass-reflection-streak {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 28%, transparent 45%, rgba(199, 244, 100, 0.03) 70%, transparent 100%);
+  pointer-events: none;
+}
+
+.glass-screen-vignette {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 44px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+#prof, .character-portrait {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  top: auto;
+  transform: translateX(-50%);
+  width: min(580px, 85vw);
+  height: 78vh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.character-canvas, .character-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  display: block;
+}
+
+#bub, .bubbles-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Monospace thoughts matching the ASCII canvas engine aesthetic */
+.thought-item, .b {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  font-size: clamp(14px, 1.8vw, 24px);
+  color: #e8e5df;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.95), 0 0 20px rgba(0, 0, 0, 0.85);
+  will-change: transform, opacity;
+}
+
+.thought-item.lead {
+  font-size: clamp(18px, 2.4vw, 32px);
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 14px rgba(0, 0, 0, 1), 0 0 25px rgba(233, 230, 223, 0.25);
+}
+
+.thought-item.accent {
+  font-family: 'DM Mono', monospace;
+  font-style: normal;
+  color: var(--color-warm-accent, #d4a574);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.95), 0 0 22px rgba(212, 165, 116, 0.35);
+}
+
+.thought-item.dim {
+  font-size: clamp(12px, 1.3vw, 17px);
+  color: rgba(232, 229, 223, 0.55);
+  letter-spacing: 0.08em;
+}
+
+/* Background text matrix layer — blends thoughts into the text wall (like video) */
+.thought-matrix {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+}
+
+.matrix-row {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(11px, 0.95vw, 15px);
+  color: rgba(225, 221, 212, 0.36);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  user-select: none;
+  will-change: transform, opacity;
+}
+
+/* ═══════════════════════════════════════════
+   SCENE 04 — ANXIETY VISUALIZATION
+   Text wall with anxiety.jpeg, face detection
+   ═══════════════════════════════════════════ */
+
+#anx, .anxiety-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 6;
+}
+
+#wall {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  z-index: 1;
+}
+
+#cap {
+  position: absolute;
+  left: 6vw;
+  bottom: 8vh;
+  font: italic 400 clamp(22px, 3.0vw, 42px) / 1.3 'Playfair Display', Georgia, serif;
+  letter-spacing: 0.01em;
+  max-width: 65vw;
+  color: #e9e6df;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.95), 0 0 4px rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+#lab {
+  position: absolute;
+  pointer-events: none;
+  font: italic 500 30px 'Playfair Display', Georgia, serif;
+  color: #fff;
+  text-shadow: 0 0 12px #000, 0 0 3px #000;
+  opacity: 0;
+  transform: translate(16px, -44px);
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+
+
+
+/* ═══════════════════════════════════════════
+   MOBILE — illustration overrides
+   ═══════════════════════════════════════════ */
+@media (max-width: 680px) {
+  .room-illustration { object-position: 60% center; }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ELEVATION FOUNDATIONS: GRAIN, CURSOR, ENTRY GATE, CHAPTER SYSTEM
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ── Global Unified Grain & Vignette Overlay ── */
+.global-grain-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+}
+
+.global-grain-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.90' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.global-vignette-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 45%,
+    rgba(6, 6, 8, 0.65) 100%
+  );
+}
+
+/* ── Custom Cursor ── */
+.custom-cursor-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.custom-cursor-dot {
+  position: fixed;
+  top: -3px;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  background: var(--story-cream);
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+  transition: transform 0.05s linear;
+}
+
+.custom-cursor-ring {
+  position: fixed;
+  top: -18px;
+  left: -18px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(243, 239, 233, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+  transition: width 0.22s ease, height 0.22s ease, border-color 0.22s ease, top 0.22s ease, left 0.22s ease;
+}
+
+.custom-cursor-root.is-hover .custom-cursor-ring {
+  top: -24px;
+  left: -24px;
+  width: 48px;
+  height: 48px;
+  border-color: var(--story-lime);
+  background: rgba(199, 244, 100, 0.06);
+}
+
+.custom-cursor-ring.is-down {
+  transform: scale(0.85);
+  border-color: var(--story-amber);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NO SIGNAL PRELOADER — eg-* component
+   ══════════════════════════════════════════════════════════════ */
+
+/* Root: fixed fullscreen, z above everything */
+.eg-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  background: #000;
+  will-change: clip-path, opacity, filter;
+}
+
+/* Chunky B&W static canvas — fills the screen, pixelated upscale */
+.eg-static {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+/* Sickly-green tint: #5f8a2a at ~35% overlay blend */
+.eg-tint {
+  position: absolute;
+  inset: 0;
+  background: #5f8a2a;
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Vignette — dark edges pulling inward */
+.eg-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 42%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  pointer-events: none;
+}
+
+/* 3-px scanlines */
+.eg-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.28) 3px,
+    rgba(0, 0, 0, 0.28) 6px
+  );
+  pointer-events: none;
+}
+
+/* Slow rolling lighter band — ~6 s loop */
+.eg-roll-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.055) 40%,
+    rgba(255, 255, 255, 0.085) 50%,
+    rgba(255, 255, 255, 0.055) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+  animation: eg-band-roll 6s linear infinite;
+}
+
+@keyframes eg-band-roll {
+  from { top: -18%; }
+  to   { top: 100%; }
+}
+
+/* Terminal fragment flashes */
+.eg-term-frag {
+  position: absolute;
+  font: 11px/1 'DM Mono', 'Courier New', monospace;
+  color: #8fe03a;
+  opacity: 0.3;
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  transform: translateY(-50%);
+}
+
+/* Centre label — solid black rect, white mono text */
+.eg-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 300px;
+  min-height: 56px;
+
+  background: #000;
+  border: none;
+  outline: none;
+  padding: 14px 22px 18px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  font-family: 'DM Mono', 'Courier New', monospace;
+  text-align: center;
+  user-select: none;
+
+  /* Accessible focus ring — visible on keyboard nav */
+  outline-offset: 3px;
+}
+
+/* Visible focus ring */
+.eg-label:focus-visible {
+  outline: 2px solid #8fe03a;
+  outline-offset: 4px;
+}
+
+/* Ensure minimum tap/click target */
+@media (pointer: coarse) {
+  .eg-label { min-height: 64px; min-width: 320px; }
+}
+
+/* Line 1 — "NO SIGNAL" */
+.eg-l1 {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  line-height: 1;
+  min-width: 10ch;
+  text-align: center;
+}
+
+/* Line 2 — progress / ready / hover */
+.eg-l2 {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9bc45a;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+  text-align: center;
+}
+
+/* Blinking cursor on ready state */
+.eg-blink {
+  animation: eg-cursor-blink 1.1s step-start infinite;
+}
+
+@keyframes eg-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* 2-px progress bar along label bottom */
+.eg-prog-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  display: block;
+  overflow: hidden;
+}
+
+.eg-prog-fill {
+  display: block;
+  height: 100%;
+  background: #8fe03a;
+  transition: width 0.18s linear;
+}
+
+/* Hover state — static dims, text changes */
+.eg-label.is-hover .eg-l1 {
+  color: #f1efe8;
+  letter-spacing: 0.18em;
+}
+
+.eg-label.is-hover .eg-l2 {
+  color: #fff;
+  letter-spacing: 0.24em;
+}
+
+/* Exiting state — label fades (driven by JS inline style) */
+.eg-label.is-exiting {
+  pointer-events: none;
+}
+
+/* Sound toggle — small, bottom-right corner */
+.eg-sound-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 24px;
+  background: none;
+  border: none;
+  padding: 8px 10px;
+  cursor: pointer;
+  font: 500 9px/1 'DM Mono', monospace;
+  letter-spacing: 0.16em;
+  color: rgba(143, 224, 58, 0.45);
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+  /* Minimum 44px target */
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eg-sound-btn:hover,
+.eg-sound-btn:focus-visible {
+  color: #9bc45a;
+  outline: 1px solid rgba(143, 224, 58, 0.3);
+  outline-offset: 2px;
+}
+
+.eg-sound-btn.is-on {
+  color: #8fe03a;
+}
+
+/* Reduced-motion overrides: static drawn once, no animation */
+@media (prefers-reduced-motion: reduce) {
+  .eg-roll-band      { animation: none; top: 200%; }
+  .eg-blink          { animation: none; opacity: 1; }
+  .eg-root           { will-change: auto; }
+}
+
+
+
+.entry-minimal-wrap {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.entry-site-name {
+  font: 500 12.5px/1 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #7d7973;
+  margin-bottom: 28px;
+}
+
+.entry-minimal-bar {
+  width: clamp(160px, 16vw, 220px);
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.entry-minimal-bar.is-loaded {
+  display: none;
+}
+
+.entry-minimal-fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  background: #E29338;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.entry-minimal-pct {
+  font: 500 12px/1 'DM Mono', monospace;
+  color: #585550;
+  letter-spacing: 0.14em;
+}
+
+.entry-minimal-enter {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  color: #FAF6EE;
+  font: italic 400 24px/1 'Playfair Display', Georgia, serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.25s ease, transform 0.25s ease;
+  animation: entryFadeIn 0.4s ease forwards;
+}
+
+@keyframes entryFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.entry-minimal-enter:hover {
+  color: #C7F464;
+  transform: translateY(-2px);
+}
+
+.entry-minimal-arrow {
+  font-style: normal;
+  font-size: 18px;
+  transition: transform 0.25s ease;
+}
+
+.entry-minimal-enter:hover .entry-minimal-arrow {
+  transform: translate(3px, -3px);
+}
+
+.entry-minimal-note {
+  font: 400 11px/1.4 'DM Sans', sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4a4742;
+  margin-top: 26px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.entry-minimal-note.is-visible {
+  opacity: 0.85;
+}
+
+/* ── Chapter Bar & Marquee ── */
+.chapter-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: linear-gradient(to bottom, rgba(11, 11, 12, 0.85) 0%, rgba(11, 11, 12, 0) 100%);
+  pointer-events: none;
+}
+
+.chapter-bar > * {
+  pointer-events: auto;
+}
+
+.chapter-indicator-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(18, 18, 22, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(243, 239, 233, 0.12);
+  border-radius: 999px;
+  color: #e2ded7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chapter-indicator-btn:hover {
+  border-color: rgba(243, 239, 233, 0.35);
+  background: rgba(25, 25, 30, 0.9);
+}
+
+.chapter-num {
+  font-size: 11px;
+  color: var(--story-amber);
+}
+
+.chapter-divider {
+  color: #555;
+}
+
+.chapter-name {
+  font-size: 11px;
+  color: #fff;
+}
+
+.chapter-chevron {
+  transition: transform 0.2s ease;
+}
+
+.chapter-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.chapter-marquee-wrap {
+  flex: 1;
+  max-width: 520px;
+  margin: 0 24px;
+  overflow: hidden;
+  white-space: nowrap;
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+.chapter-marquee-inner {
+  display: inline-block;
+  animation: marqueeScroll 28s linear infinite;
+}
+
+@keyframes marqueeScroll {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.marquee-text {
+  font-size: 13px;
+  color: rgba(225, 221, 212, 0.42);
+}
+
+.marquee-sep {
+  margin: 0 12px;
+  color: rgba(225, 221, 212, 0.2);
+}
+
+.chapter-sound-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(18, 18, 22, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(243, 239, 233, 0.12);
+  border-radius: 999px;
+  color: #c9c5bd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chapter-sound-btn:hover {
+  border-color: rgba(243, 239, 233, 0.35);
+}
+
+.sound-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #555;
+}
+
+.chapter-sound-btn.is-active .sound-pulse-dot {
+  background: var(--story-lime);
+  box-shadow: 0 0 6px rgba(199, 244, 100, 0.7);
+}
+
+/* ── Chapter Modal ── */
+.chapter-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(7, 7, 9, 0.82);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 64px 28px;
+}
+
+.chapter-modal-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(18, 18, 22, 0.95);
+  border: 1px solid rgba(243, 239, 233, 0.16);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+}
+
+.chapter-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.modal-subtitle {
+  color: var(--story-amber);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.chapter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chapter-item-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  color: #dedbd5;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chapter-item-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.chapter-item-btn.is-active {
+  background: rgba(199, 244, 100, 0.08);
+  border-color: rgba(199, 244, 100, 0.28);
+}
+
+.chapter-item-num {
+  font-size: 12px;
+  color: var(--story-amber);
+}
+
+.chapter-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.chapter-item-title {
+  font-size: 12px;
+  color: #fff;
+}
+
+.chapter-item-cue {
+  font-size: 11.5px;
+  color: #888;
+}
+
+.chapter-item-indicator {
+  font-size: 10px;
+  color: var(--story-lime);
+  background: rgba(199, 244, 100, 0.15);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* ─── Re-Inked Phone UI & Hatching ─── */
+.inked-phone {
+  background: #141312 !important;
+  border: 2px solid #38342e !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.92), 0 0 0 1px rgba(225, 221, 212, 0.15) !important;
+  border-radius: 36px !important;
+}
+
+.lime-smile {
+  color: var(--story-lime);
+  font-family: 'DM Mono', monospace;
+  font-style: normal;
+  font-weight: 600;
+  margin-left: 3px;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   SCENE 05 — THE REACH: INTERACTIVE HANDS & ENDING RESOURCE GUIDE
+   ═════════════════════════════════════════════════════════════════ */
+
+.hands-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 10;
+  background: #0B0B0C;
+  transition: background-color 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hands-scene.is-warm {
+  background: var(--story-cream);
+  color: var(--story-ink);
+}
+
+.hands-stage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 40px 20px;
+}
+
+/* Interactive Hands Container */
+.interactive-hands-wrap {
+  width: 100%;
+  max-width: 820px;
+  height: 380px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.hands-svg-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Hand cross-hatch lines */
+.hand-ink-path {
+  fill: none;
+  stroke: #D6D0C5;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.6s ease;
+}
+
+.is-warm .hand-ink-path {
+  stroke: #25221E;
+}
+
+.hand-hatch-line {
+  stroke: rgba(214, 208, 197, 0.45);
+  stroke-width: 1.2;
+}
+
+.is-warm .hand-hatch-line {
+  stroke: rgba(37, 34, 30, 0.45);
+}
+
+/* Amber Warmth Center Bloom */
+.hands-warmth-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(226, 147, 56, 0.65) 0%, rgba(226, 147, 56, 0.15) 50%, transparent 75%);
+  filter: blur(28px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Drag Interaction Slider */
+.hands-drag-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 5;
+}
+
+.hands-drag-cue {
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  color: #aba69e;
+}
+
+.is-warm .hands-drag-cue {
+  color: #6d6961;
+}
+
+.hands-slider-track {
+  width: 260px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  cursor: grab;
+  user-select: none;
+  transition: border-color 0.25s ease;
+}
+
+.is-warm .hands-slider-track {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.hands-slider-track:active {
+  cursor: grabbing;
+}
+
+.hands-slider-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--story-amber);
+  box-shadow: 0 0 16px rgba(226, 147, 56, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: transform 0.06s linear;
+}
+
+/* Supportive Title */
+.hands-story-header {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.hands-main-title {
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.2;
+  margin: 0 0 10px;
+  color: #fff;
+  transition: color 0.6s ease;
+}
+
+.is-warm .hands-main-title {
+  color: #141312;
+}
+
+.hands-sub-quote {
+  font-size: 18px;
+  color: #a8a39a;
+  margin: 0;
+  transition: color 0.6s ease;
+}
+
+.is-warm .hands-sub-quote {
+  color: #4a463f;
+}
+
+/* ─── Ending Resources Section (Sleep Well Elevations) ─── */
+.ending-guide-wrap {
+  width: 100%;
+  max-width: 820px;
+  margin: 64px auto 80px;
+  padding: 0 24px;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.85s ease 0.3s, transform 0.85s ease 0.3s;
+}
+
+.ending-guide-wrap.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* The Personal Note */
+.the-personal-note {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 32px 36px;
+  margin-bottom: 40px;
+}
+
+.is-warm .the-personal-note {
+  background: #f0ebe0;
+  border-color: rgba(30, 28, 25, 0.12);
+}
+
+.note-tag {
+  color: var(--story-amber);
+  margin-bottom: 12px;
+}
+
+.the-personal-note p {
+  font: 400 16px/1.7 'DM Sans', sans-serif;
+  color: #c9c5bd;
+  margin: 0 0 16px;
+}
+
+.is-warm .the-personal-note p {
+  color: #2e2b26;
+}
+
+.note-signature {
+  font-style: italic;
+  font-family: 'Playfair Display', Georgia, serif;
+  color: var(--story-amber) !important;
+  margin: 0 !important;
+}
+
+/* What to Say: Copyable Cards */
+.guide-section {
+  margin-bottom: 44px;
+}
+
+.guide-heading {
+  font-size: 20px;
+  margin-bottom: 16px;
+  color: #fff;
+}
+
+.is-warm .guide-heading {
+  color: #141312;
+}
+
+.copyable-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.copyable-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+.is-warm .copyable-card {
+  background: #f2ece0;
+  border-color: rgba(30, 28, 25, 0.12);
+}
+
+.copyable-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--story-amber);
+}
+
+.copyable-text {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #e2ded7;
+}
+
+.is-warm .copyable-text {
+  color: #24221d;
+}
+
+.copyable-action {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--story-amber);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Helplines By Country */
+.helplines-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.helpline-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.is-warm .helpline-box {
+  background: #f2ece0;
+  border-color: rgba(30, 28, 25, 0.12);
+}
+
+.helpline-country {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.is-warm .helpline-country {
+  color: #666;
+}
+
+.helpline-number {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.is-warm .helpline-number {
+  color: #141312;
+}
+
+.helpline-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+/* How to Ask Twice */
+.ask-twice-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.ask-step-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.is-warm .ask-step-item {
+  background: #f2ece0;
+  border-color: rgba(30, 28, 25, 0.12);
+}
+
+.ask-step-num {
+  color: var(--story-amber);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.ask-step-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.is-warm .ask-step-title {
+  color: #141312;
+}
+
+.ask-step-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #aaa;
+}
+
+.is-warm .ask-step-desc {
+  color: #4a463f;
+}
+
+/* ── Minimal Floating Audio Toggle Control ── */
+.minimal-sound-btn {
+  position: fixed;
+  top: clamp(18px, 2.8vw, 32px);
+  right: clamp(20px, 3.2vw, 44px);
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(12, 12, 16, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #FAF6EE;
+  font: 500 11px/1 'DM Mono', monospace;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  user-select: none;
+}
+
+.minimal-sound-btn:hover {
+  background: rgba(22, 22, 28, 0.95);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.minimal-sound-btn.is-active .sound-btn-label {
+  color: var(--story-cream);
+}
+
+.minimal-sound-btn.is-muted {
+  opacity: 0.55;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.minimal-sound-btn.is-muted .sound-btn-label {
+  color: #7a7670;
+}
+
+/* Audio wave bars */
+.sound-wave-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 12px;
+}
+
+.wave-bar {
+  display: block;
+  width: 2px;
+  background: var(--story-lime);
+  border-radius: 1px;
+}
+
+.wave-bar.b1 { height: 6px; }
+.wave-bar.b2 { height: 11px; }
+.wave-bar.b3 { height: 8px; }
+
+.minimal-sound-btn.is-active .wave-bar {
+  animation: soundBarPulse 1.2s ease-in-out infinite alternate;
+}
+
+.wave-bar.b1 { animation-delay: 0.0s; }
+.wave-bar.b2 { animation-delay: 0.2s; }
+.wave-bar.b3 { animation-delay: 0.4s; }
+
+@keyframes soundBarPulse {
+  0%   { transform: scaleY(0.4); }
+  100% { transform: scaleY(1.2); }
+}
+
+.minimal-sound-btn.is-muted .wave-bar {
+  background: #5a5752;
+  animation: none;
+  height: 2px;
+}
+

@@ -1,0 +1,1 @@
+export const ANX = '/media/anxiety.jpeg';
