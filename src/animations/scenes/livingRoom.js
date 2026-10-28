@@ -18,11 +18,13 @@ export function addLivingRoomScene(timeline) {
         const prog = targetTime / filmTl.totalDuration()
         const targetScroll = st.start + prog * (st.end - st.start)
         if (window.__lenis) {
-          window.__lenis.scrollTo(targetScroll, { immediate: true })
+          window.__lenis.scrollTo(targetScroll, {
+            duration: 1.0,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+          })
         } else {
-          window.scrollTo({ top: targetScroll, behavior: 'instant' })
+          window.scrollTo({ top: targetScroll, behavior: 'smooth' })
         }
-        st.update()
       }
     }
     // No autoplay or timeout chains! Pauses on #m1 until user explicitly acts.
@@ -87,7 +89,7 @@ export function addLivingRoomScene(timeline) {
     }, '<0.15')
     .to('.room-wrap', {
       autoAlpha: 0,
-      duration: 0.4,
-      ease: 'power1.in'
+      duration: 0.45,
+      ease: 'power1.inOut'
     }, '> -0.2')
 }

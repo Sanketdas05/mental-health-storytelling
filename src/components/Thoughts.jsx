@@ -2,42 +2,72 @@ import { useEffect, useRef } from 'react';
 import { gsap, prefersReducedMotion } from '../animations/motion';
 import { audioManager } from '../utils/audio';
 
-// Four discrete luminance levels for chunky analog static (same recipe as preloader)
+// Four discrete luminance levels for chunky analog static on phone screen
 const LUMA = [12, 70, 195, 250];
 
-// Rich halo of inner monologue thoughts orbiting the centered character
-// (pure typography, NO bubbles - exactly matching the user's reference design)
-const THOUGHTS = [
-  // Prominent racing thoughts
-  { text: "what if they leave",          x: 21, y: 22, cls: "lead" },
-  { text: "you're too much",            x: 78, y: 20, cls: "lead" },
-  { text: "I'm tired",                  x: 50, y: 11, cls: "lead accent" },
-  { text: "just say you're fine",        x: 18, y: 46, cls: "lead" },
-  { text: "keep smiling",               x: 82, y: 36, cls: "accent" },
-  { text: "nobody gets it",             x: 16, y: 64, cls: "" },
-  { text: "don't be a burden",          x: 81, y: 56, cls: "" },
-  { text: "why can't I just be normal", x: 26, y: 78, cls: "" },
-  { text: "everyone else is coping",    x: 74, y: 74, cls: "dim" },
-  { text: "what if I say the wrong thing", x: 50, y: 88, cls: "" },
-  { text: "what if…",                   x: 86, y: 26, cls: "accent" },
-
-  // Ambient whispered background thoughts
-  { text: "it's fine.",                 x: 31, y: 36, cls: "dim" },
-  { text: "nod.",                       x: 69, y: 46, cls: "dim" },
-  { text: "don't make it weird",        x: 34, y: 58, cls: "dim" },
-  { text: "act normal",                 x: 66, y: 65, cls: "dim" },
-  { text: "breathe",                    x: 51, y: 18, cls: "dim" },
-  { text: "they're watching",           x: 22, y: 92, cls: "dim" },
-  { text: "smile",                      x: 76, y: 85, cls: "dim" },
+// Landing points on body (0..1 figure-space), the word that lands there, and when (local p)
+const SEEDS = [
+  [.36, .26, "what if they leave", .54],
+  [.64, .26, "you're too much", .58],
+  [.50, .36, "why can't I just be normal", .62],
+  [.32, .42, "nobody gets it", .67],
+  [.68, .42, "don't be a burden", .72],
+  [.50, .50, "just say you're fine", .77],
+  [.50, .56, "keep smiling", .82]
 ];
 
-const MATRIX_TEXT = "what if they leave. you're too much. nobody gets it. just say you're fine. why can't I just be normal. don't be a burden. what if I say the wrong thing. keep smiling. it's fine. everyone else is coping. don't make it weird. ";
+// Ambient whispered background thoughts
+const AMB = [
+  ["breathe", .50, .08],
+  ["it's fine.", .36, .28],
+  ["nod.", .70, .38],
+  ["act normal", .78, .52],
+  ["everyone else is coping", .74, .68],
+  ["smile", .80, .78],
+  ["don't make it weird", .30, .48],
+  ["they're watching", .22, .88]
+];
+
+// Exact eye coordinates and metrics in figure.png (source dimensions 896 x 1200)
+const FIGW = 896;
+const FIGH = 1200;
+const EYES = [
+  { x: 394, y: 318, rx: 26, ry: 13.5, irisR: 12.5, patchSize: 28 }, // Viewer's left
+  { x: 511, y: 317, rx: 27, ry: 13.5, irisR: 13.0, patchSize: 28 }  // Viewer's right
+];
+
+const CS = 8;
+const CH = 11;
+const RAMP = " .,:;-=+*x#%@";
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const ez = (x) => x * x * (3 - 2 * x);
+
+const heart = (now, p) => {
+  const bpm = 58 + 62 * p;
+  const ph = (now / 1000 * bpm / 60) % 1;
+  return Math.exp(-ph * 9);
+};
 
 export function Thoughts() {
   const phoneCanvasRef = useRef(null);
-  const characterCanvasRef = useRef(null);
+  const figCanvasRef = useRef(null);
+  const textCanvasRef = useRef(null);
+  const progressRef = useRef(0);
 
-  // ─── 1. Phone Screen CRT Static, Tearing & Degraded Character Canvas ─────
+  // Hook for timeline to update phase 3 local progress (0..1)
+  useEffect(() => {
+    window.__setPhase3Progress = (val) => {
+      progressRef.current = val;
+    };
+    return () => {
+      delete window.__setPhase3Progress;
+    };
+  }, []);
+
+  // ─── 1. Phone Screen CRT Static, Tearing & Degraded Ghost Eyes ──────────
   useEffect(() => {
     const canvas = phoneCanvasRef.current;
     if (!canvas) return;
@@ -52,15 +82,13 @@ export function Thoughts() {
 
     const reduced = prefersReducedMotion();
 
-    // Internal state
     const state = {
-      staticAmp: 1.0,     // 1.0 down to ~0.2, settling at ~0.06
-      charFlash: 0.0,     // Spikes on message send
-      tearPulse: 0.0,     // Extra tear band on message send
+      staticAmp: 1.0,
+      charFlash: 0.0,
+      tearPulse: 0.0,
       time: 0,
     };
 
-    // Global hooks so GSAP timeline can drive static & tear flashes
     window.__setPhoneStaticAmp = (amp) => {
       state.staticAmp = Math.max(0.04, Math.min(1.0, amp));
     };
@@ -70,10 +98,9 @@ export function Thoughts() {
       state.tearPulse = 1.0;
       try {
         audioManager.playMessageNotification();
-      } catch (_) {}
+      } catch (_) { }
     };
 
-    // 3-5 horizontal tearing bands with random offsets and intervals (100-300ms)
     const numBands = 4;
     const tearBands = Array.from({ length: numBands }, () => ({
       y: Math.random() * ch,
@@ -82,7 +109,6 @@ export function Thoughts() {
       nextUpdate: performance.now() + 100 + Math.random() * 200,
     }));
 
-    // Chunky analog static offscreen buffer (220x440)
     const offStatic = document.createElement('canvas');
     offStatic.width = cw;
     offStatic.height = ch;
@@ -90,7 +116,6 @@ export function Thoughts() {
     const staticImgData = offStaticCtx.createImageData(cw, ch);
     const staticBuf = new Uint32Array(staticImgData.data.buffer);
 
-    // Degraded character offscreen preparation (1-bit / ink-threshold / scanline mask)
     const offChar = document.createElement('canvas');
     offChar.width = cw;
     offChar.height = ch;
@@ -101,13 +126,11 @@ export function Thoughts() {
     charImg.src = '/media/character-anxious.jpg';
     charImg.onload = () => {
       if (!offCharCtx) return;
-      // Crop ONLY the wide, haunted eyes of the character (source size 896x1200)
       const eyeSx = 285;
       const eyeSy = 235;
       const eyeSw = 326;
       const eyeSh = 150;
 
-      // Draw onto offChar centered in the upper-mid screen above message area
       const eyeDw = cw * 0.88;
       const eyeDh = eyeDw * (eyeSh / eyeSw);
       const eyeDx = (cw - eyeDw) / 2;
@@ -122,7 +145,6 @@ export function Thoughts() {
       const eyeRadiusY = eyeDh * 0.52;
       const eyeRadiusX = eyeDw * 0.50;
 
-      // Apply 1-bit / ink-threshold with scanlines and soft elliptical feather mask so ONLY eyes show
       for (let y = 0; y < ch; y++) {
         const isScanline = (y % 2 === 0);
         const distY = Math.abs(y - eyeCenterY) / eyeRadiusY;
@@ -137,7 +159,6 @@ export function Thoughts() {
           const distX = Math.abs(x - (eyeDx + eyeDw * 0.5)) / eyeRadiusX;
           const ellipseDist = distX * distX + distY * distY;
 
-          // Outside elliptical crop area -> clear to black
           if (ellipseDist > 1.0) {
             d[idx] = 10;
             d[idx + 1] = 10;
@@ -146,10 +167,8 @@ export function Thoughts() {
             continue;
           }
 
-          // Soft feathering at the ellipse perimeter (0.75 - 1.0)
           const feather = ellipseDist > 0.75 ? (1.0 - ellipseDist) / 0.25 : 1.0;
 
-          // High-contrast ink threshold (eyes stay intense white; dark shadows clip)
           let inkVal;
           if (lum < 40) {
             inkVal = 8;
@@ -163,7 +182,6 @@ export function Thoughts() {
 
           inkVal = Math.floor(inkVal * feather);
 
-          // Subtle phosphor-green tint on brightest eye highlights
           d[idx] = Math.min(255, Math.floor(inkVal * 0.94));
           d[idx + 1] = Math.min(255, Math.floor(inkVal * 1.02));
           d[idx + 2] = Math.min(255, Math.floor(inkVal * 0.88));
@@ -175,48 +193,37 @@ export function Thoughts() {
       charReady = true;
     };
 
-    // Main animation loop at ~12 fps for chunky static
     let lastStaticTime = 0;
     let animId;
 
     const loop = (timestamp) => {
       animId = requestAnimationFrame(loop);
-
       state.time += 0.016;
 
-      // Decay impulse spikes
       if (state.charFlash > 0.01) state.charFlash *= 0.88;
       else state.charFlash = 0;
 
       if (state.tearPulse > 0.01) state.tearPulse *= 0.84;
       else state.tearPulse = 0;
 
-      // Rate limit static regeneration to ~12-14 fps (every ~75ms)
       const shouldUpdateStatic = (timestamp - lastStaticTime > 75);
       if (shouldUpdateStatic) lastStaticTime = timestamp;
 
-      // ── 1. Clear Screen Canvas (Dark phosphor background: #080907)
       ctx.fillStyle = '#080907';
       ctx.fillRect(0, 0, cw, ch);
 
-      // ── 2. Degraded Ghost Character Layer
       if (charReady && offCharCtx) {
-        // Base visibility: barely visible ghost (alpha 0.04 - 0.12)
-        // Spikes up to 0.45 when a message is sent or on tear flash
         const baseAlpha = 0.06 + Math.sin(state.time * 2.3) * 0.04;
         const flashAlpha = state.charFlash * 0.42;
         const totalCharAlpha = Math.min(0.55, baseAlpha + flashAlpha);
 
         ctx.save();
         ctx.globalAlpha = totalCharAlpha;
-
-        // Jitter subtly along X on spike
         const jitterX = state.charFlash > 0.1 ? (Math.random() - 0.5) * 6 : 0;
         ctx.drawImage(offChar, jitterX, 0);
         ctx.restore();
       }
 
-      // ── 3. Horizontal Tearing Bands (100-300ms intervals, random Y)
       if (!reduced) {
         const now = performance.now();
         for (let i = 0; i < numBands; i++) {
@@ -227,12 +234,9 @@ export function Thoughts() {
             b.offset = (Math.random() - 0.5) * 22;
             b.nextUpdate = now + 120 + Math.random() * 200;
           }
-
-          // Slice and re-draw with horizontal offset
           ctx.drawImage(canvas, 0, b.y, cw, b.h, b.offset, b.y, cw, b.h);
         }
 
-        // Extra tear pulse on message send
         if (state.tearPulse > 0.1) {
           const py = ch * 0.44 + (Math.random() - 0.5) * 44;
           const poff = (Math.random() > 0.5 ? 1 : -1) * (20 + state.tearPulse * 24);
@@ -240,7 +244,6 @@ export function Thoughts() {
         }
       }
 
-      // ── 4. Chunky Analog Static (Same recipe as preloader: ~12 fps, discrete LUMA levels)
       const amp = state.staticAmp;
       if (amp > 0.03) {
         if (shouldUpdateStatic) {
@@ -250,7 +253,6 @@ export function Thoughts() {
             if (Math.random() < thresh) {
               const v = LUMA[Math.floor(Math.random() * 4)];
               const a = Math.floor(amp * 190 * (0.4 + Math.random() * 0.6));
-              // Faint phosphor-green & warm off-white (AABBGGRR)
               const g = Math.min(255, v + 25);
               staticBuf[i] = (a << 24) | (v << 16) | (g << 8) | v;
             } else {
@@ -266,7 +268,6 @@ export function Thoughts() {
         ctx.restore();
       }
 
-      // ── 5. ~35% Phosphor-Green Tint Wash
       ctx.save();
       ctx.fillStyle = 'rgba(199, 244, 100, 0.08)';
       ctx.fillRect(0, 0, cw, ch);
@@ -282,85 +283,367 @@ export function Thoughts() {
     };
   }, []);
 
-  // ─── 2. Seamless Character Canvas (Flood-fill alpha mask removes black background) ───
+  // ─── 2. Prototype Phase 3: Alive Character + Tracking Eyes + Glitch Erosion ───
   useEffect(() => {
-    // Initial states for GSAP timeline elements
-    gsap.set('.thought-item', { opacity: 0, scale: 0.5 });
-    gsap.set('#prof', { opacity: 0, scale: 0.85 });
-    gsap.set('.mono-log-line, .typing-indicator', { opacity: 0, y: 10 });
-    gsap.set('#thoughtMatrix', { opacity: 0 });
+    const cv = textCanvasRef.current;
+    const fg = figCanvasRef.current;
+    if (!cv || !fg) return;
 
-    const canvas = characterCanvasRef.current;
-    if (!canvas) return;
+    const cx = cv.getContext('2d');
+    const fx = fg.getContext('2d');
+    if (!cx || !fx) return;
 
-    const img = new Image();
-    img.src = '/media/character-anxious.jpg';
-    img.onload = () => {
-      const w = img.naturalWidth || 896;
-      const h = img.naturalHeight || 1200;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) return;
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    const resizeCanvases = () => {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      cv.width = W;
+      cv.height = H;
+      fg.width = W;
+      fg.height = H;
+    };
+    resizeCanvases();
 
-      ctx.drawImage(img, 0, 0);
-      const imgData = ctx.getImageData(0, 0, w, h);
-      const d = imgData.data;
+    const reduced = prefersReducedMotion();
 
-      // Flood-fill background pixels from all four borders
-      // This strips ONLY the outer background black while preserving the character's hair, shirt, and scribbles
-      const visited = new Uint8Array(w * h);
-      const queue = new Int32Array(w * h * 2);
-      let qHead = 0;
-      let qTail = 0;
+    // Prepare figure with complete multi-pass background removal (0 black box!)
+    const offChar = document.createElement('canvas');
+    const offCtx = offChar.getContext('2d', { willReadFrequently: true });
+    let charFigureReady = false;
+    let P = [];
 
-      for (let x = 0; x < w; x++) {
-        queue[qTail++] = x;
-        queue[qTail++] = 0;
-        queue[qTail++] = x;
-        queue[qTail++] = h - 1;
+    const buildGrid = () => {
+      if (!charFigureReady) return;
+      const cols = Math.ceil(W / CS);
+      const rows = Math.ceil(H / CH);
+      const fh = H * 0.90;
+      const fw = fh * (FIGW / FIGH);
+      const figR = {
+        x: (W - fw) / 2,
+        y: H * 0.07,
+        w: fw,
+        h: fh,
+        s: fw / FIGW
+      };
+
+      // Sample luminance grid from transparent character
+      const c = document.createElement('canvas');
+      c.width = cols;
+      c.height = rows;
+      const x = c.getContext('2d');
+      x.drawImage(offChar, 0, 0, offChar.width, offChar.height, figR.x / CS, figR.y / CH, figR.w / CS, figR.h / CH);
+      const d = x.getImageData(0, 0, cols, rows).data;
+      const LF = new Float32Array(cols * rows);
+
+      for (let i = 0; i < LF.length; i++) {
+        const a = d[i * 4 + 3] / 255;
+        LF[i] = ((d[i * 4] * 0.3 + d[i * 4 + 1] * 0.59 + d[i * 4 + 2] * 0.11) / 255) * a;
       }
-      for (let y = 0; y < h; y++) {
-        queue[qTail++] = 0;
-        queue[qTail++] = y;
-        queue[qTail++] = w - 1;
-        queue[qTail++] = y;
-      }
 
-      while (qHead < qTail) {
-        const x = queue[qHead++];
-        const y = queue[qHead++];
-        const idx = y * w + x;
-        if (visited[idx]) continue;
-        visited[idx] = 1;
+      const seeds = SEEDS.map(s => ({
+        x: figR.x + s[0] * figR.w,
+        y: figR.y + s[1] * figR.h,
+        w: s[2],
+        t: s[3]
+      }));
 
-        const p = idx * 4;
-        const lum = d[p] * 0.299 + d[p + 1] * 0.587 + d[p + 2] * 0.114;
-        if (lum < 42) {
-          d[p + 3] = 0; // Pure 100% transparency for background! Eliminates black box!
-          if (x > 0 && !visited[idx - 1]) {
-            queue[qTail++] = x - 1;
-            queue[qTail++] = y;
+      const S = [];
+
+      for (let r = 0; r < rows; r++) {
+        for (let col = 0; col < cols; col++) {
+          const i = r * cols + col;
+          const cellX = col * CS + CS / 2;
+          const cellY = r * CH + CH / 2;
+          const alpha = d[i * 4 + 3] / 255;
+          const lum = LF[i];
+
+          // Glitch effect ONLY covers skin (lum >= 0.16), NOT hair or shirt!
+          const isSkin = (alpha > 0.15 && lum >= 0.16);
+          if (isSkin) {
+            let tc = 9, wd = '';
+            const eye = EYES.some(e => {
+              const ex = figR.x + e.x * figR.s;
+              const ey = figR.y + e.y * figR.s;
+              const dx = (cellX - ex) / (e.rx * figR.s * 1.15);
+              const dy = (cellY - ey) / (e.ry * figR.s * 1.15);
+              return dx * dx + dy * dy <= 1.0;
+            });
+            if (!eye) {
+              seeds.forEach(s => {
+                const t = s.t + Math.hypot(cellX - s.x, cellY - s.y) / 2000 + (Math.random() - 0.5) * 0.03;
+                if (t < tc) {
+                  tc = t;
+                  wd = s.w;
+                }
+              });
+            }
+            S.push({ x: cellX, y: cellY, L: Math.max(0.12, lum), tc: eye ? 0.95 : tc, eye, wd, id: i });
           }
-          if (x < w - 1 && !visited[idx + 1]) {
-            queue[qTail++] = x + 1;
-            queue[qTail++] = y;
-          }
-          if (y > 0 && !visited[idx - w]) {
-            queue[qTail++] = x;
-            queue[qTail++] = y - 1;
-          }
-          if (y < h - 1 && !visited[idx + w]) {
-            queue[qTail++] = x;
-            queue[qTail++] = y + 1;
-          }
-        } else if (lum < 65) {
-          // Feathered edge for smooth transition
-          d[p + 3] = Math.round(((lum - 42) / 23) * 255);
         }
       }
+      P = S;
+    };
 
-      ctx.putImageData(imgData, 0, 0);
+    const charImg = new Image();
+    let irisCanvases = null;
+
+    const onFigureLoaded = () => {
+      const w = charImg.naturalWidth || FIGW;
+      const h = charImg.naturalHeight || FIGH;
+      offChar.width = w;
+      offChar.height = h;
+      offCtx.clearRect(0, 0, w, h);
+      offCtx.drawImage(charImg, 0, 0);
+
+      // Extract high-resolution circular irises from original figure
+      irisCanvases = EYES.map(eye => {
+        const c = document.createElement('canvas');
+        c.width = eye.patchSize;
+        c.height = eye.patchSize;
+        const ctx = c.getContext('2d');
+        if (!ctx) return c;
+        const half = eye.patchSize / 2;
+        ctx.beginPath();
+        ctx.arc(half, half, eye.irisR, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(
+          charImg,
+          eye.x - half,
+          eye.y - half,
+          eye.patchSize,
+          eye.patchSize,
+          0,
+          0,
+          eye.patchSize,
+          eye.patchSize
+        );
+        return c;
+      });
+
+      // Clear the static irises on offChar with the sclera tone so character has clean white eyeballs
+      offCtx.save();
+      offCtx.fillStyle = '#fcfbfa';
+      EYES.forEach(eye => {
+        offCtx.beginPath();
+        offCtx.ellipse(eye.x, eye.y, eye.irisR + 0.5, eye.irisR, 0, 0, Math.PI * 2);
+        offCtx.fill();
+      });
+      offCtx.restore();
+
+      charFigureReady = true;
+      buildGrid();
+    };
+    charImg.onload = onFigureLoaded;
+    charImg.src = '/media/figure.png';
+    if (charImg.complete && charImg.naturalWidth > 0) {
+      onFigureLoaded();
+    }
+
+    // Tracking state
+    let px = -999, py = -999;
+    let eyeCurX = 0, eyeCurY = 0;
+
+    const onPointerMove = (e) => {
+      px = e.clientX;
+      py = e.clientY;
+    };
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('resize', () => {
+      resizeCanvases();
+      buildGrid();
+    });
+
+    let animId;
+    const frame = (now) => {
+      animId = requestAnimationFrame(frame);
+
+      const p = progressRef.current;
+      const fh = H * 0.90;
+      const fw = fh * (FIGW / FIGH);
+      const figR = {
+        x: (W - fw) / 2,
+        y: H * 0.08,
+        w: fw,
+        h: fh,
+        s: fw / FIGW
+      };
+
+      // Flinch impulse calculated from landing thoughts
+      let fl = 0;
+      SEEDS.forEach((s) => {
+        const d = p - s[3];
+        if (d > 0 && d < 0.05) {
+          fl += (1 - d / 0.05) * Math.sin(d * 1400) * 0.5;
+        }
+      });
+
+      const br = Math.sin(now / 4600 * 6.283);
+      const hb = heart(now, p) * 0.006 * (reduced ? 0 : 1);
+      const sy = 1 + 0.011 * br + hb + fl * 0.01;
+      const sx = 1 + 0.004 * br + hb * 0.4;
+      const sway = 0.004 * Math.sin(now / 1700) + fl * 0.01;
+      const pvx = figR.x + figR.w / 2;
+      const pvy = figR.y + figR.h;
+      const Tf = (x, y) => {
+        const ys = pvy + (y - pvy) * sy;
+        const xs = pvx + (x - pvx) * sx;
+        return [xs + sway * (ys - pvy), ys];
+      };
+
+      // ── Smooth Gaze Tracking calculation ──
+      let targetGazeX = 0;
+      let targetGazeY = 0;
+
+      if (px > -100 && !reduced) {
+        // Calculate eye midpoint in world/screen coordinates
+        const midSrcX = (EYES[0].x + EYES[1].x) / 2;
+        const midSrcY = (EYES[0].y + EYES[1].y) / 2;
+        const [midScreenX, midScreenY] = Tf(figR.x + midSrcX * figR.s, figR.y + midSrcY * figR.s);
+
+        const dx = px - midScreenX;
+        const dy = py - midScreenY;
+        const dist = Math.hypot(dx, dy);
+        const angle = Math.atan2(dy, dx);
+
+        // Maximum travel inside eye socket (elliptical range)
+        const maxTravelX = 13.0 * figR.s;
+        const maxTravelY = 5.0 * figR.s;
+
+        // Smooth acceleration based on cursor distance
+        const mag = Math.min(1.0, dist / 280);
+
+        // Anxious micro-tremor
+        const microJitter = (Math.sin(now / 95) * 0.35 + (Math.random() - 0.5) * 0.25) * figR.s;
+
+        targetGazeX = Math.cos(angle) * maxTravelX * mag + microJitter;
+        targetGazeY = Math.sin(angle) * maxTravelY * mag + microJitter * 0.5;
+      } else {
+        // Subtle natural breathing / nervous drift when no pointer
+        targetGazeX = Math.sin(now / 1400) * 1.8 * figR.s;
+        targetGazeY = Math.cos(now / 1900) * 1.0 * figR.s;
+      }
+
+      eyeCurX = lerp(eyeCurX, targetGazeX, 0.16);
+      eyeCurY = lerp(eyeCurY, targetGazeY, 0.16);
+
+      // ── Render Figure Layer ──
+      fx.clearRect(0, 0, W, H);
+      const figA = seg(p, 0.40, 0.52) * (1 - seg(p, 0.88, 0.96));
+
+      if (figA > 0 && charFigureReady) {
+        fx.save();
+        fx.globalAlpha = figA;
+        fx.translate(pvx, pvy);
+        fx.transform(1, 0, sway, 1, 0, 0);
+        fx.scale(sx, sy);
+        fx.translate(-pvx, -pvy);
+
+        // Draw transparent character (with clean sclera ready for tracking pupils)
+        fx.drawImage(offChar, figR.x, figR.y, figR.w, figR.h);
+
+        // Render Tracking Pupils clipped to scleras
+        if (irisCanvases && irisCanvases.length === 2) {
+          EYES.forEach((eye, i) => {
+            const cx = figR.x + eye.x * figR.s;
+            const cy = figR.y + eye.y * figR.s;
+            const scleraRx = eye.rx * figR.s;
+            const scleraRy = eye.ry * figR.s;
+
+            fx.save();
+            fx.beginPath();
+            fx.ellipse(cx, cy, scleraRx, scleraRy, 0, 0, Math.PI * 2);
+            fx.clip();
+
+            const ic = irisCanvases[i];
+            const destW = ic.width * figR.s;
+            const destH = ic.height * figR.s;
+            const destX = cx + eyeCurX - destW / 2;
+            const destY = cy + eyeCurY - destH / 2;
+            fx.drawImage(ic, destX, destY, destW, destH);
+            fx.restore();
+          });
+        }
+
+
+
+        // GLITCH EROSION: Erase cells where thoughts have landed!
+        for (const q of P) {
+          if (q.tc < p && !q.eye) {
+            fx.clearRect(q.x - CS / 2 - 0.5, q.y - CH / 2 - 0.5, CS + 1, CH + 1);
+          }
+        }
+
+        fx.restore();
+      }
+
+      // ── Render Text & Glitch Glyphs Layer ──
+      cx.clearRect(0, 0, W, H);
+      if (p > 0.42 && p < 0.98) {
+        // Approaching thoughts landing on body (disappear the instant they hit the character!)
+        cx.textBaseline = 'middle';
+        const fontSize = Math.max(14, Math.min(22, W * 0.015));
+        cx.font = `600 ${fontSize}px "JetBrains Mono", monospace`;
+
+        SEEDS.forEach((s, i) => {
+          // Disappear as soon as the thought lands on the character (p >= s[3])
+          if (p < s[3] - 0.14 || p >= s[3]) return;
+          const a = ez(seg(p, s[3] - 0.13, s[3]));
+          const sx0 = (s[0] < 0.5 ? W * 0.16 : W * 0.84);
+          const sy0 = H * (0.16 + 0.10 * (i % 7));
+
+          const x = lerp(sx0, figR.x + s[0] * figR.w, a);
+          const y = lerp(sy0, figR.y + s[1] * figR.h, a);
+          const alpha = seg(p, s[3] - 0.14, s[3] - 0.08) * (1 - seg(p, s[3] - 0.015, s[3]));
+
+          cx.fillStyle = `rgba(233, 230, 223, ${Math.max(0, alpha * 0.94)})`;
+          cx.textAlign = 'center';
+          cx.fillText(s[2], x, y);
+        });
+
+        // Ambient whispered background thoughts
+        AMB.forEach(([w, u, v]) => {
+          const a = (1 - seg(p, 0.82, 0.92)) * seg(p, 0.44, 0.52);
+          if (a <= 0) return;
+          cx.fillStyle = `rgba(233, 230, 223, ${0.30 * a})`;
+          cx.textAlign = 'center';
+          cx.fillText(w, W * u + Math.sin(now / 2000 + u * 9) * 6, H * v);
+        });
+
+        // GLITCH GLYPHS: Render letters of the thoughts + glitch glyphs (monochrome grey/white, NO green!)
+        cx.font = `600 ${CS * 1.55}px "JetBrains Mono", monospace`;
+        cx.textAlign = 'left';
+        const t4 = (now / 110) | 0;
+
+        for (const q of P) {
+          if (p < q.tc || q.eye) continue;
+          let [x, y] = Tf(q.x, q.y);
+
+          const isGlitching = (p - q.tc < 0.08);
+          let ch;
+          if (isGlitching || (q.id + t4 * ((q.id % 7) + 1)) % 19 === 0) {
+            ch = RAMP[(Math.random() * RAMP.length) | 0];
+          } else {
+            ch = q.wd ? q.wd[q.id % q.wd.length] : RAMP[Math.min(RAMP.length - 1, (q.L * RAMP.length) | 0)];
+          }
+          if (!ch || ch === ' ') continue;
+
+          const fadeOut = 1 - seg(p, 0.88, 0.96);
+          const alpha = Math.min(1, (0.55 + q.L * 0.45) * fadeOut);
+
+          // Pure monochrome grey and white glitch palette inspired by Image 2
+          cx.fillStyle = isGlitching ? '#ffffff' : `rgba(233, 230, 223, ${alpha})`;
+          cx.fillText(ch, x - CS / 2, y);
+        }
+      }
+    };
+
+    animId = requestAnimationFrame(frame);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('resize', resizeCanvases);
     };
   }, []);
 
@@ -368,46 +651,31 @@ export function Thoughts() {
     <section className="thoughts scene" id="phoneScene" aria-labelledby="phone-scene-title">
       <p className="eyebrow phone-index type-narrator" id="phone-scene-title">THE MESSAGE <span>02</span></p>
 
-      {/* ── 1. SCENE BACKDROP: Dark Workstation (desk, lamp glow, desk surface; NO blue-grey) ── */}
+      {/* ── 1. SCENE BACKDROP: Dark Workstation ── */}
       <div className="phone-scene-backdrop" aria-hidden="true" />
 
-      {/* ── Spill: Soft phosphor-green light from screen onto desk behind the phone ── */}
+      {/* ── Soft Phosphor Spill ── */}
       <div className="phone-glow-spill" aria-hidden="true" />
 
-      {/* ── Background text matrix — blends thoughts into the ASCII text wall ── */}
-      <div id="thoughtMatrix" className="thought-matrix type-thought" aria-hidden="true">
-        {Array.from({ length: 36 }).map((_, i) => (
-          <div key={i} className="matrix-row">
-            {MATRIX_TEXT.repeat(4)}
-          </div>
-        ))}
-      </div>
+      {/* ── 2. Prototype Phase 3 Alive Figure & Glitching Thoughts Canvases ── */}
+      <canvas
+        ref={figCanvasRef}
+        id="fig"
+        className="phase3-fig-canvas"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}
+        aria-hidden="true"
+      />
+      <canvas
+        ref={textCanvasRef}
+        id="cv"
+        className="phase3-cv-canvas"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 3 }}
+        aria-hidden="true"
+      />
 
-      {/* ── Main character — rendered with 100% transparent background (NO black box!) ── */}
-      <div id="prof" className="character-portrait" aria-hidden="true" style={{ mixBlendMode: 'screen' }}>
-        <canvas
-          ref={characterCanvasRef}
-          className="character-canvas"
-          aria-hidden="true"
-        />
-      </div>
-
-      {/* ── Floating thoughts — pure monospace typography matching what he thinks ── */}
-      <div id="bub" className="bubbles-container type-thought" aria-hidden="true">
-        {THOUGHTS.map(({ text, x, y, cls }, idx) => (
-          <div
-            key={idx}
-            className={`thought-item ${cls}`.trim()}
-            style={{ left: `${x}%`, top: `${y}%` }}
-          >
-            {text}
-          </div>
-        ))}
-      </div>
-
-      {/* ── 2. PHASE 3 DESK PHONE (match-cut from workstation desk) ── */}
-      <div id="ph" className="desk-phone-matchcut" aria-label="A desk phone receiving a message through signal interference">
-        {/* Layer a: Casing illustration (scratched dark casing, inked outlines, matching desk art) */}
+      {/* ── 3. PHASE 3 DESK PHONE (match-cut from workstation desk, full UI intact!) ── */}
+      <div id="ph" className="desk-phone-matchcut" aria-label="A desk phone receiving a message through signal interference" style={{ zIndex: 4 }}>
+        {/* Layer a: Casing illustration */}
         <div className="phone-chassis-top" aria-hidden="true">
           <div className="phone-speaker-slit" />
           <div className="phone-camera-dot" />

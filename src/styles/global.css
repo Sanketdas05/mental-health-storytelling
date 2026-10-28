@@ -1358,7 +1358,7 @@ h2 em {
 
 .thoughts {
   opacity: 0;
-  background: radial-gradient(circle at 50% 48%, #292931, #0e0e11 67%);
+  background: radial-gradient(ellipse at 50% 45%, #101012 0%, #08080a 55%, #050506 100%);
   perspective: 1200px;
 }
 

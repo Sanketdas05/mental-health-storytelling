@@ -101,11 +101,13 @@ export function AnxietyScene({ stateRef }) {
         off.height = s.IH;
         const octx = off.getContext('2d', { willReadFrequently: true });
 
-        const imgAspect = charImg.naturalWidth / charImg.naturalHeight;
-        const boyH = s.IH * 0.78;
-        const boyW = boyH * imgAspect * fontAspect; // Corrected width
+        // Match Phase 3 figure.png dimensions (896 x 1200) and bounds (y: 0.07, h: 0.90) for a seamless cross-dissolve
+        const FIGW = 896;
+        const FIGH = 1200;
+        const boyH = s.IH * 0.90;
+        const boyY = s.IH * 0.07;
+        const boyW = boyH * (FIGW / FIGH) * fontAspect;
         const boyX = (s.IW - boyW) / 2;
-        const boyY = s.IH * 0.22;
 
         s.boyBounds = { x: boyX, y: boyY, w: boyW, h: boyH };
 
@@ -113,11 +115,18 @@ export function AnxietyScene({ stateRef }) {
         const data = octx.getImageData(0, 0, s.IW, s.IH).data;
 
         for (let i = 0; i < totalCells; i++) {
+          const alpha = data[i * 4 + 3] / 255;
           const r = data[i * 4];
           const g = data[i * 4 + 1];
           const b = data[i * 4 + 2];
-          const lum = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-          s.charInk[i] = lum < 0.08 ? 0 : Math.pow(lum, 0.90);
+          const lum = ((r * 0.299 + g * 0.587 + b * 0.114) / 255) * alpha;
+
+          if (alpha > 0.12) {
+            // Visible shirt, arms and silhouette: base silhouette luminance of 0.14
+            s.charInk[i] = lum < 0.05 ? 0.14 : Math.max(0.14, Math.pow(lum, 0.90));
+          } else {
+            s.charInk[i] = 0;
+          }
         }
       }
 
@@ -129,10 +138,10 @@ export function AnxietyScene({ stateRef }) {
         const octx = off.getContext('2d', { willReadFrequently: true });
 
         const facesAspect = facesImg.naturalWidth / facesImg.naturalHeight;
-        const facesH = s.IH * 0.75;
-        const facesW = facesH * facesAspect * fontAspect; // Corrected width
+        const facesH = s.IH * 0.82;
+        const facesW = facesH * facesAspect * fontAspect;
         const facesX = (s.IW - facesW) / 2;
-        const facesY = -s.IH * 0.05;
+        const facesY = -s.IH * 0.04;
 
         octx.drawImage(facesImg, facesX, facesY, facesW, facesH);
         const data = octx.getImageData(0, 0, s.IW, s.IH).data;
@@ -161,22 +170,22 @@ export function AnxietyScene({ stateRef }) {
       drainedCtx.clearRect(0, 0, W, H);
 
       const bb = s.boyBounds;
-      // 7 Drained energy vortex centers located on the character's body
+      // 7 Drained energy vortex centers calibrated to figure.png anatomy
       const spirals = [
-        // 1. Head / Face (concentric scribble oval replacing facial features)
-        { cx: bb.x + bb.w * 0.50, cy: bb.y + bb.h * 0.23, rx: bb.w * 0.18, ry: bb.h * 0.12, speed: 1.1, loops: 5.5 },
+        // 1. Head / Face (replaces eyes and facial features)
+        { cx: bb.x + bb.w * 0.48, cy: bb.y + bb.h * 0.31, rx: bb.w * 0.16, ry: bb.h * 0.11, speed: 1.1, loops: 5.5 },
         // 2. Left chest
-        { cx: bb.x + bb.w * 0.38, cy: bb.y + bb.h * 0.54, rx: bb.w * 0.14, ry: bb.h * 0.10, speed: -1.4, loops: 4.5 },
+        { cx: bb.x + bb.w * 0.36, cy: bb.y + bb.h * 0.66, rx: bb.w * 0.13, ry: bb.h * 0.09, speed: -1.4, loops: 4.5 },
         // 3. Right chest
-        { cx: bb.x + bb.w * 0.62, cy: bb.y + bb.h * 0.58, rx: bb.w * 0.15, ry: bb.h * 0.11, speed: 1.2, loops: 4.5 },
+        { cx: bb.x + bb.w * 0.60, cy: bb.y + bb.h * 0.68, rx: bb.w * 0.14, ry: bb.h * 0.10, speed: 1.2, loops: 4.5 },
         // 4. Upper abdomen
-        { cx: bb.x + bb.w * 0.44, cy: bb.y + bb.h * 0.74, rx: bb.w * 0.12, ry: bb.h * 0.09, speed: -1.6, loops: 4.0 },
+        { cx: bb.x + bb.w * 0.44, cy: bb.y + bb.h * 0.80, rx: bb.w * 0.12, ry: bb.h * 0.08, speed: -1.6, loops: 4.0 },
         // 5. Lower abdomen
-        { cx: bb.x + bb.w * 0.58, cy: bb.y + bb.h * 0.86, rx: bb.w * 0.13, ry: bb.h * 0.09, speed: 1.3, loops: 4.0 },
-        // 6. Left arm
-        { cx: bb.x + bb.w * 0.16, cy: bb.y + bb.h * 0.66, rx: bb.w * 0.09, ry: bb.h * 0.07, speed: 1.5, loops: 3.5 },
-        // 7. Right arm
-        { cx: bb.x + bb.w * 0.84, cy: bb.y + bb.h * 0.66, rx: bb.w * 0.09, ry: bb.h * 0.07, speed: -1.5, loops: 3.5 },
+        { cx: bb.x + bb.w * 0.54, cy: bb.y + bb.h * 0.90, rx: bb.w * 0.13, ry: bb.h * 0.08, speed: 1.3, loops: 4.0 },
+        // 6. Left shoulder / arm
+        { cx: bb.x + bb.w * 0.22, cy: bb.y + bb.h * 0.74, rx: bb.w * 0.09, ry: bb.h * 0.07, speed: 1.5, loops: 3.5 },
+        // 7. Right shoulder / arm
+        { cx: bb.x + bb.w * 0.74, cy: bb.y + bb.h * 0.74, rx: bb.w * 0.09, ry: bb.h * 0.07, speed: -1.5, loops: 3.5 },
       ];
 
       drainedCtx.strokeStyle = '#ffffff';
@@ -206,13 +215,13 @@ export function AnxietyScene({ stateRef }) {
 
       // Vertical siphoning tension tendrils streaming from head to looming faces
       drainedCtx.strokeStyle = 'rgba(255,255,255,0.7)';
-      drainedCtx.lineWidth = 1.5;
-      const tendrilCount = 6;
+      drainedCtx.lineWidth = 1.6;
+      const tendrilCount = 7;
       for (let i = 0; i < tendrilCount; i++) {
-        const tx = bb.x + bb.w * (0.35 + i * 0.06);
-        const topY = bb.y - bb.h * 0.18;
-        const botY = bb.y + bb.h * 0.20;
-        const wave = Math.sin(time * 0.003 + i) * 6;
+        const tx = bb.x + bb.w * (0.34 + i * 0.045);
+        const topY = Math.max(0, bb.y - bb.h * 0.06);
+        const botY = bb.y + bb.h * 0.24;
+        const wave = Math.sin(time * 0.003 + i) * 5;
         drainedCtx.beginPath();
         drainedCtx.moveTo(tx, botY);
         drainedCtx.quadraticCurveTo(tx + wave, (topY + botY) / 2, tx - wave * 0.5, topY);
@@ -229,7 +238,11 @@ export function AnxietyScene({ stateRef }) {
       charReady = true;
       buildBuffers();
     };
-    charImg.src = '/media/character-anxious.jpg';
+    charImg.src = '/media/figure.png';
+    if (charImg.complete && charImg.naturalWidth > 0) {
+      charReady = true;
+      buildBuffers();
+    }
 
     facesImg.onload = () => {
       facesReady = true;
@@ -375,20 +388,27 @@ export function AnxietyScene({ stateRef }) {
             const rIdx = Math.min(spiralLen - 1, (spiralL * spiralLen) | 0);
             chr = SPIRAL_RAMP[rIdx];
             isBright = true;
+          } else if (hasBoy) {
+            // Boy: primary anchor figure; dims down into hollow silhouette as anxiety coils take over
+            const dimFactor = 1 - drainedState * 0.75;
+            const combinedL = hasFace
+              ? Math.max(L_boy * dimFactor, L_faces * faceEmergence * 0.85)
+              : L_boy * dimFactor;
+            const isShirtOrArm = L_boy <= 0.16;
+            // Slightly visible shirt and arms (a ~ 0.32..0.38)
+            a = Math.min(1, Math.max(isShirtOrArm ? 0.32 : 0.44, combinedL * 1.45) * cleanFade);
+            const rIdx = Math.min(rampLen - 1, Math.max(isShirtOrArm ? 1 : 0, (combinedL * rampLen) | 0));
+            chr = RAMP[rIdx];
+            if (hasFace && faceEmergence > 0.35 && Math.random() < 0.08) {
+              isBright = true;
+            }
           } else if (hasFace) {
-            // Looming sketched mask faces from anxiety.jpeg
+            // Looming sketched crowd faces emerging around and above the boy
             const faceL = L_faces * faceEmergence;
-            a = Math.min(1, (faceL * 1.45) * cleanFade);
+            a = Math.min(1, (faceL * 1.40) * cleanFade);
             const rIdx = Math.min(denseLen - 1, (faceL * denseLen) | 0);
             chr = DENSE_RAMP[rIdx];
-            isBright = true;
-          } else if (hasBoy) {
-            // Boy: dims down into hollow silhouette as energy is siphoned into faces/spirals
-            const dimFactor = 1 - drainedState * 0.78;
-            const boyL = L_boy * dimFactor;
-            a = Math.min(1, Math.max(0.42, boyL * 1.45) * cleanFade);
-            const rIdx = Math.min(rampLen - 1, (boyL * rampLen) | 0);
-            chr = RAMP[rIdx];
+            isBright = (faceEmergence > 0.35 && faceL > 0.45);
           } else {
             // Background thoughts: clearly legible with solid contrast
             a = 0.36 * cleanFade;

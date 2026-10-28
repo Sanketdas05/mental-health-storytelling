@@ -45,7 +45,7 @@ export default function App() {
           setProgress(self.progress)
           // Drive ambient audio evolution from scroll progress
           audioManager.setScrollProgress(self.progress)
-          if (self.progress <= 0.005) {
+          if (self.progress === 0) {
             const intro = document.querySelector('.crt-intro')
             if (intro?.__introReset) intro.__introReset()
             const ws = document.querySelector('.room-wrap')

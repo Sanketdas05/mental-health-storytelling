@@ -363,7 +363,12 @@ export function LivingRoom({ soundEnabled = true }) {
         opacity: 1,
         scale: 1.6,
         duration: 0.5
-      }, '<0.15');
+      }, '<0.15')
+      .to(ws, {
+        opacity: 0,
+        duration: 0.35,
+        ease: 'power1.inOut'
+      }, '> -0.25');
 
   }, []);
 
@@ -444,6 +449,7 @@ export function LivingRoom({ soundEnabled = true }) {
         bgLayer.style.transform = 'translate(0px, 0px)';
       }
 
+      gsap.set(el, { clearProps: 'opacity' });
       gsap.set('.ws-phone-ambient-glow', { clearProps: 'opacity,scale' });
       gsap.set('.ws-phone-glow-svg', { clearProps: 'opacity' });
       gsap.set('.room-flash', { autoAlpha: 0 });
