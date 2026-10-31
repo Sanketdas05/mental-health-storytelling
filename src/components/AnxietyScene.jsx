@@ -253,6 +253,10 @@ export function AnxietyScene({ stateRef }) {
       buildBuffers();
     };
     facesImg.src = '/media/looming-faces.jpg';
+    if (facesImg.complete && facesImg.naturalWidth > 0) {
+      facesReady = true;
+      buildBuffers();
+    }
 
     const resize = () => {
       const r = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -292,12 +296,24 @@ export function AnxietyScene({ stateRef }) {
     window.addEventListener('pointermove', onPointer, { passive: true });
     window.addEventListener('pointerleave', onPointerLeave);
 
+    let lastCp = '';
+    let lastCol = '';
+    let lastOp = '';
+    let anxEl = null;
+
     // ── Main Render Loop ──────────────────────────────────────────────────
     const loop = (now) => {
       const p = Math.max(0, s.progress);
       const { W, H, px, py, charInk, facesInk, drainedInk, IW, IH, cs, ch } = s;
 
-      // ── Performance optimization: If scene is idle/invisible, skip canvas pipeline entirely ──
+      // ── Optimization: Skip rendering if element is hidden and scene is idle (p <= 0) ──
+      const el = anxEl || (anxEl = document.getElementById('anx'));
+      const isVisible = (el && el.style.visibility !== 'hidden') || p > 0;
+      if (!isVisible && p <= 0) {
+        return;
+      }
+
+      // ── If scene has fully exited, skip canvas pipeline entirely ──
       if (p >= 0.995) {
         if (s.cpx > 0) ctx.clearRect(0, 0, W, H);
         return;
@@ -479,22 +495,31 @@ export function AnxietyScene({ stateRef }) {
 
       // ── Dynamic Tension Caption (Narrator Job: small sans caps at ~60% opacity) ──
       let cp = 'Racing thoughts';
+      let col = 'rgba(233, 230, 223, 0.60)';
       if (p > 0.72) {
         cp = 'Completely drained.';
-        // Story color code: Lime drains completely to muted ash-grey at ~60% opacity
-        caption.style.color = 'rgba(180, 175, 165, 0.65)';
+        col = 'rgba(180, 175, 165, 0.65)';
       } else if (p > 0.42) {
         cp = 'The voices crowd in.';
-        caption.style.color = 'rgba(233, 230, 223, 0.60)';
       } else if (p > 0.22) {
         cp = 'You keep smiling. It keeps growing.';
-        caption.style.color = 'rgba(233, 230, 223, 0.60)';
-      } else {
-        caption.style.color = 'rgba(233, 230, 223, 0.60)';
       }
 
-      if (caption.textContent !== cp) caption.textContent = cp;
-      caption.style.opacity = String(seg(p, 0.22, 0.38) * cleanFade);
+      if (lastCol !== col) {
+        lastCol = col;
+        caption.style.color = col;
+      }
+
+      if (lastCp !== cp) {
+        lastCp = cp;
+        caption.textContent = cp;
+      }
+
+      const newOp = (seg(p, 0.22, 0.38) * cleanFade).toFixed(3);
+      if (lastOp !== newOp) {
+        lastOp = newOp;
+        caption.style.opacity = newOp;
+      }
     };
 
     let isAnxRunning = true;

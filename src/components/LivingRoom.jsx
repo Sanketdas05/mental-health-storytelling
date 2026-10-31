@@ -8,6 +8,33 @@ const DEPTH = { bg: 1.6, desk: 0.35 };
 const LOOK_BOUNDS = { x: 44, y: 22 };
 
 
+const BEATS = [
+  { id: 'man', label: '1 · Man at desk', focalX: 0.50, focalY: 0.66, zoom: 1.0 },
+  { id: 'laptop', label: '2 · Laptop', focalX: 0.46, focalY: 0.58, zoom: 1.0 },
+  { id: 'lamp', label: '3 · Lamp', focalX: 0.12, focalY: 0.35, zoom: 1.0 },
+  { id: 'photo', label: '4 · Photo + Mug', focalX: 0.88, focalY: 0.66, zoom: 1.0 },
+  { id: 'phone', label: '5 · Phone', focalX: 0.84, focalY: 0.90, zoom: 1.3 }
+];
+
+function getCameraPos(beatIndex, viewportW, viewportH) {
+  const beat = BEATS[beatIndex] || BEATS[0];
+  const zoom = beat.zoom || 1.0;
+  const sceneH = viewportH * 1.18;
+  const sceneW = sceneH * 2.0735;
+  const rigW = sceneW * zoom;
+  const rigH = sceneH * zoom;
+
+  let x = (viewportW / 2) - beat.focalX * rigW;
+  let y = (viewportH * 0.56) - beat.focalY * rigH;
+
+  const minX = viewportW - rigW;
+  const minY = viewportH - rigH;
+  x = Math.max(minX, Math.min(0, x));
+  y = Math.max(minY, Math.min(0, y));
+
+  return { x, y, zoom, sceneW, sceneH, rigW, rigH, minX, minY };
+}
+
 const WORKSTATION_STORIES = {
   photo: {
     tag: "A Framed Memory",
@@ -100,8 +127,76 @@ export function LivingRoom({ soundEnabled = true }) {
   const [cardVisible, setCardVisible] = useState(false);
   const [isFadingCard, setIsFadingCard] = useState(false);
   const [lampOn, setLampOn] = useState(true);
+  const [currentBeat, setCurrentBeat] = useState(0);
+  const currentBeatRef = useRef(0);
+  const [isPortrait, setIsPortrait] = useState(typeof window !== 'undefined' ? (window.innerWidth / window.innerHeight < 1.1) : false);
+  const [dragHintVisible, setDragHintVisible] = useState(true);
+  const cameraRef = useRef({ x: 0, y: 0, zoom: 1.0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0, camX: 0, camY: 0 });
+  const cameraRigRef = useRef(null);
+  const cameraTweenRef = useRef(null);
 
   const reduced = prefersReducedMotion();
+
+  const goToBeat = useCallback((idx) => {
+    const clampedIdx = Math.max(0, Math.min(BEATS.length - 1, idx));
+    currentBeatRef.current = clampedIdx;
+    setCurrentBeat(clampedIdx);
+
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
+    const target = getCameraPos(clampedIdx, vpW, vpH);
+    const rig = cameraRigRef.current;
+    if (!rig) return;
+
+    rig.style.width = `${target.sceneW.toFixed(1)}px`;
+    rig.style.height = `${target.sceneH.toFixed(1)}px`;
+
+    cameraTweenRef.current?.kill();
+    if (reduced) {
+      cameraRef.current.x = target.x;
+      cameraRef.current.y = target.y;
+      cameraRef.current.zoom = target.zoom;
+      rig.style.transform = `translate3d(${target.x.toFixed(1)}px, ${target.y.toFixed(1)}px, 0) scale(${target.zoom.toFixed(3)})`;
+    } else {
+      cameraTweenRef.current = gsap.to(cameraRef.current, {
+        x: target.x,
+        y: target.y,
+        zoom: target.zoom,
+        duration: 0.7,
+        ease: 'power2.out',
+        onUpdate: () => {
+          const c = cameraRef.current;
+          rig.style.transform = `translate3d(${c.x.toFixed(1)}px, ${c.y.toFixed(1)}px, 0) scale(${c.zoom.toFixed(3)})`;
+        }
+      });
+    }
+  }, [reduced]);
+
+  useEffect(() => {
+    let rz;
+    const onResize = () => {
+      clearTimeout(rz);
+      rz = setTimeout(() => {
+        const port = window.innerWidth / window.innerHeight < 1.1;
+        setIsPortrait(port);
+        if (port) {
+          goToBeat(currentBeatRef.current);
+        } else if (cameraRigRef.current) {
+          cameraRigRef.current.style.width = '';
+          cameraRigRef.current.style.height = '';
+          cameraRigRef.current.style.transform = '';
+        }
+      }, 150);
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, [goToBeat]);
 
   // ─── Global Key Listener for Dismissing Cards ────────────────────────────
   useEffect(() => {
@@ -197,26 +292,78 @@ export function LivingRoom({ soundEnabled = true }) {
     };
   }, [getDeskInfo]);
 
-  // ─── Subtle Pointer Look-Around in Desk View ──────────────────────────────
+  // ─── Camera System & Pointer Look-Around in Desk View ─────────────────────
   useEffect(() => {
-    if (reduced) return;
     const ws = wrapRef.current;
     if (!ws) return;
 
-    const onMove = (e) => {
+    const onPointerDown = (e) => {
       if (!atDeskRef.current || phoneClickedRef.current) return;
-      const r = ws.getBoundingClientRect();
-      const nx = (e.clientX - r.left) / r.width - 0.5;
-      const ny = (e.clientY - r.top) / r.height - 0.5;
-      lookRef.current.tx = Math.max(-LOOK_BOUNDS.x, Math.min(LOOK_BOUNDS.x, nx * LOOK_BOUNDS.x * 2));
-      lookRef.current.ty = Math.max(-LOOK_BOUNDS.y, Math.min(LOOK_BOUNDS.y, ny * LOOK_BOUNDS.y * 2));
+      if (e.target.closest('button, .ws-desk-interactive, .ws-phone-hit, .ws-story-card')) return;
+      const port = window.innerWidth / window.innerHeight < 1.1;
+      if (!port) return;
+
+      isDraggingRef.current = true;
+      cameraTweenRef.current?.kill();
+      dragStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        camX: cameraRef.current.x,
+        camY: cameraRef.current.y
+      };
+      setDragHintVisible(false);
     };
 
-    ws.addEventListener('pointermove', onMove, { passive: true });
+    const onPointerMove = (e) => {
+      if (!atDeskRef.current || phoneClickedRef.current) return;
+      const port = window.innerWidth / window.innerHeight < 1.1;
+
+      if (port) {
+        if (isDraggingRef.current) {
+          const dx = e.clientX - dragStartRef.current.x;
+          const dy = e.clientY - dragStartRef.current.y;
+          const c = cameraRef.current;
+          const vpW = window.innerWidth;
+          const vpH = window.innerHeight;
+          const sceneH = vpH * 1.18;
+          const sceneW = sceneH * 2.0735;
+          const rigW = sceneW * c.zoom;
+          const rigH = sceneH * c.zoom;
+          const minX = vpW - rigW;
+          const minY = vpH - rigH;
+
+          const newX = Math.max(minX, Math.min(0, dragStartRef.current.camX + dx));
+          const newY = Math.max(minY, Math.min(0, dragStartRef.current.camY + dy));
+          c.x = newX;
+          c.y = newY;
+
+          if (cameraRigRef.current) {
+            cameraRigRef.current.style.transform = `translate3d(${newX.toFixed(1)}px, ${newY.toFixed(1)}px, 0) scale(${c.zoom.toFixed(3)})`;
+          }
+        }
+      } else if (!reduced) {
+        const r = ws.getBoundingClientRect();
+        const nx = (e.clientX - r.left) / r.width - 0.5;
+        const ny = (e.clientY - r.top) / r.height - 0.5;
+        lookRef.current.tx = Math.max(-LOOK_BOUNDS.x, Math.min(LOOK_BOUNDS.x, nx * LOOK_BOUNDS.x * 2));
+        lookRef.current.ty = Math.max(-LOOK_BOUNDS.y, Math.min(LOOK_BOUNDS.y, ny * LOOK_BOUNDS.y * 2));
+      }
+    };
+
+    const onPointerUp = () => {
+      isDraggingRef.current = false;
+    };
+
+    ws.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
 
     const loop = () => {
       rafRef.current = requestAnimationFrame(loop);
       if (!rafActiveRef.current || !atDeskRef.current || phoneClickedRef.current) return;
+      const port = window.innerWidth / window.innerHeight < 1.1;
+      if (port) return;
 
       const lk = lookRef.current;
       lk.x += (lk.tx - lk.x) * 0.06;
@@ -237,7 +384,10 @@ export function LivingRoom({ soundEnabled = true }) {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
-      ws.removeEventListener('pointermove', onMove);
+      ws.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
     };
   }, [reduced]);
 
@@ -515,15 +665,16 @@ export function LivingRoom({ soundEnabled = true }) {
         className="ws-world living-room"
         aria-label="A late-night workstation. A character sits at a desk wearing headphones, absorbed in work."
       >
+        <div className={`ws-camera-rig ${isPortrait ? 'is-portrait-rig' : ''}`} ref={cameraRigRef}>
         {/* ── Layer 0: Room background — walls, window, night sky ────────── */}
         <div className="ws-bg-layer" aria-hidden="true">
-          <img src="/media/ws-bg.jpg" alt="" draggable="false" />
+          <img src="/media/ws-bg.jpg" alt="" draggable="false" width="1376" height="768" decoding="async" />
           <div className="ws-layer-grain" />
         </div>
 
         {/* ── Layer 1: Desk / Table — laptop, coffee, phone ──────────────── */}
         <div className="ws-desk-layer" onClick={handleDeskBgClick}>
-          <img src="/media/ws-desk.jpg" alt="" draggable="false" className="ws-desk-img" />
+          <img src="/media/ws-desk.jpg" alt="" draggable="false" className="ws-desk-img" width="1376" height="768" decoding="async" />
 
           {/* Deep atmospheric darkness when lamp is toggled off — only screens glow */}
           <div className={`ws-room-darkness ${lampOn ? '' : 'is-dark'}`} aria-hidden="true" />
@@ -776,8 +927,37 @@ export function LivingRoom({ soundEnabled = true }) {
 
         {/* ── Layer 2: Character (boy in chair with headphones at desk) ──── */}
         <div className="ws-char-layer" aria-hidden="true">
-          <img src="/media/ws-char.png" alt="" draggable="false" className="ws-char-img" />
+          <img src="/media/ws-char.png" alt="" draggable="false" className="ws-char-img" width="1376" height="768" decoding="async" />
         </div>
+        </div>
+
+        {/* ── Portrait Progress Dots (5 beats) ── */}
+        {isPortrait && atDesk && !phoneClicked && (
+          <div className="ws-beat-dots" role="tablist" aria-label="Workstation view areas">
+            {BEATS.map((b, idx) => (
+              <button
+                key={b.id}
+                type="button"
+                role="tab"
+                aria-selected={currentBeat === idx}
+                aria-label={b.label}
+                className={`ws-beat-dot ${currentBeat === idx ? 'is-active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToBeat(idx);
+                  setDragHintVisible(false);
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* ── Portrait Drag Hint ── */}
+        {isPortrait && atDesk && !phoneClicked && dragHintVisible && (
+          <div className="ws-drag-hint" aria-hidden="true">
+            <span>↔ Drag to look around desk</span>
+          </div>
+        )}
 
         {/* World-level grain + vignette */}
         <div className="ws-world-grain" aria-hidden="true" />

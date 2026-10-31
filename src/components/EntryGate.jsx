@@ -12,10 +12,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { audioManager } from '../utils/audio';
 
-/* ── Assets to preload ── */
-const ASSETS = [
+/* ── Assets to preload (Critical for initial scene, remainder deferred to idle) ── */
+const CRITICAL_ASSETS = [
   '/media/ws-desk.jpg',
   '/media/ws-bg.jpg',
+];
+
+const DEFERRED_ASSETS = [
   '/media/ws-char.png',
   '/media/character-anxious.jpg',
   '/media/anxiety.jpeg',
@@ -23,6 +26,8 @@ const ASSETS = [
   '/media/room.jpg',
   '/media/hands.png',
 ];
+
+const ASSETS = CRITICAL_ASSETS;
 
 /* ── Terminal fragments flashed on the static ── */
 const TERMINAL_LINES = [
@@ -86,13 +91,13 @@ function useStaticCanvas(canvasRef, brightnessRef) {
   }, []);
 }
 
-/* ── Simulated progress ramp (~4.5 s ease) ── */
+/* ── Simulated progress ramp (~1.2 s ease for fast LCP & low main thread time) ── */
 function useSimProgress(enabled) {
   const [pct, setPct] = useState(0);
   useEffect(() => {
     if (!enabled) return;
     const start = Date.now();
-    const dur = 4500;
+    const dur = 1200;
     let raf;
     const tick = () => {
       const t = Math.min(1, (Date.now() - start) / dur);
@@ -140,7 +145,7 @@ export function EntryGate({ onEnter }) {
 
   useStaticCanvas(canvasRef, brightnessRef);
 
-  /* Real asset preloading */
+  /* Real asset preloading with critical path priority */
   useEffect(() => {
     if (useSimulated) return;
     let loaded = 0;
@@ -149,7 +154,7 @@ export function EntryGate({ onEnter }) {
       loaded += 1;
       const p = Math.min(100, Math.round((loaded / total) * 100));
       setRealPct(p);
-      if (loaded >= total) setTimeout(() => setRealDone(true), 300);
+      if (loaded >= total) setTimeout(() => setRealDone(true), 150);
     };
     ASSETS.forEach(src => {
       const img = new Image();
@@ -157,7 +162,22 @@ export function EntryGate({ onEnter }) {
       img.onload = bump;
       img.onerror = bump;
     });
-    const fallback = setTimeout(() => { setRealPct(100); setRealDone(true); }, 6000);
+    const fallback = setTimeout(() => { setRealPct(100); setRealDone(true); }, 1500);
+
+    // Preload deferred non-critical assets during browser idle time
+    const preloadDeferred = () => {
+      DEFERRED_ASSETS.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(preloadDeferred, { timeout: 3000 });
+    } else {
+      setTimeout(preloadDeferred, 1500);
+    }
+
     return () => clearTimeout(fallback);
   }, [useSimulated]);
 

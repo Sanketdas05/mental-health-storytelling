@@ -1,0 +1,26 @@
+# Inside the Smile
+
+> An interactive visual narrative exploring internal thoughts, emotional burnout, and the power of reaching out for mental health support.
+
+Inside the Smile is an interactive, scroll-driven web experience depicting the daily pressure of hiding anxiety behind a smile and the transformative moment of connection.
+
+## Interactive Story Chapters
+
+- [Chapter 00: The Smile](https://inside-the-smile.vercel.app/#00): CRT monitor power-on sequence and entry gate into the story.
+- [Chapter 01: The Distraction](https://inside-the-smile.vercel.app/#01): Late-night workstation scene depicting endless work and avoidance.
+- [Chapter 02: The Message](https://inside-the-smile.vercel.app/#02): A smartphone conversation contrasting external performance with internal reality.
+- [Chapter 03: The Noise](https://inside-the-smile.vercel.app/#03): 3D floating thought cloud and racing internal monologue.
+- [Chapter 04: The Weight](https://inside-the-smile.vercel.app/#04): Generative ASCII art visualization of anxiety and mental weight.
+- [Chapter 05: The Reach](https://inside-the-smile.vercel.app/#05): The climactic touch of two reaching hands, restoring warmth and hope.
+
+## Support & Crisis Resources
+
+- [988 Suicide & Crisis Lifeline](https://988lifeline.org/): Free, confidential 24/7 support in the US and Canada (Call or text 988).
+- [Crisis Text Line](https://www.crisistextline.org/): Free 24/7 mental health text support (Text HOME to 741741).
+- [The Trevor Project](https://www.thetrevorproject.org/): Crisis intervention and suicide prevention for LGBTQ young people (1-866-488-7386).
+- [Befrienders Worldwide](https://www.befrienders.org/): Global network of crisis helplines and emotional support centers.
+
+## Optional
+
+- [About & Creative Statement](https://inside-the-smile.vercel.app/#about): Behind the scenes, design tokens, and technical implementation details.
+

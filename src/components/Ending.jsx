@@ -23,7 +23,10 @@ import {
   fL,
   RAMP,
   MSG,
-  PN
+  PN,
+  createHands,
+  getStageMetrics,
+  rot
 } from './ending/handMath';
 
 import { EndingDefs } from './ending/EndingDefs';
@@ -50,6 +53,9 @@ export function Ending() {
   const subRef = useRef(null);
   const hintRef = useRef(null);
   const bloomRef = useRef(null);
+  const ringRef = useRef(null);
+  const metricsRef = useRef(getStageMetrics(typeof window !== 'undefined' ? window.innerWidth : 1000, typeof window !== 'undefined' ? window.innerHeight : 600));
+  const currentHandsRef = useRef(null);
   const hzRef = useRef(null);
   const railRef = useRef(null);
   const pgdRef = useRef(null);
@@ -65,8 +71,11 @@ export function Ending() {
 
   useEffect(() => {
     // 1. Initial Hand Renderings
-    if (hdRef.current) hdRef.current.innerHTML = paint(DARK, 'dark');
-    if (hlRef.current) hlRef.current.innerHTML = paint(LIGHT, 'light');
+    var initM = getStageMetrics(typeof window !== 'undefined' ? window.innerWidth : 1000, typeof window !== 'undefined' ? window.innerHeight : 600);
+    var initHands = createHands(initM.armLength);
+    currentHandsRef.current = initHands;
+    if (hdRef.current) hdRef.current.innerHTML = paint(initHands.DARK, 'dark');
+    if (hlRef.current) hlRef.current.innerHTML = paint(initHands.LIGHT, 'light');
     if (fhRef.current) {
       fhRef.current.innerHTML =
         '<g transform="translate(' + (488 - fD[0]) + ' ' + (240 - fD[1]) + ') rotate(' + (TH_D * 180 / Math.PI) + ') scale(' + fs + ')">' +
@@ -144,13 +153,29 @@ export function Ending() {
 
     function geom() {
       if (!handsRef.current || !fx) return;
-      var r = handsRef.current.getBoundingClientRect();
+      var stageEl = stageRef.current || handsRef.current;
+      var r = stageEl.getBoundingClientRect();
       var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       FW = r.width > 0 ? r.width : (window.innerWidth || 1000);
       FH = r.height > 0 ? r.height : (window.innerHeight || 600);
-      S1 = Math.min(FW / 1000, FH / 600);
-      OX = (FW - 1000 * S1) / 2;
-      OY = (FH - 600 * S1) / 2;
+      
+      var m = getStageMetrics(FW, FH);
+      metricsRef.current = m;
+
+      // Dynamic responsive viewBox
+      handsRef.current.setAttribute('viewBox', '0 0 ' + m.VW.toFixed(1) + ' 600');
+      handsRef.current.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+
+      // Re-render hands with custom arm length
+      var handsObj = createHands(m.armLength);
+      currentHandsRef.current = handsObj;
+      if (hdRef.current) hdRef.current.innerHTML = paint(handsObj.DARK, 'dark');
+      if (hlRef.current) hlRef.current.innerHTML = paint(handsObj.LIGHT, 'light');
+
+      // Match SVG scale & offsets
+      S1 = FH / 600;
+      OX = (FW - m.VW * S1) / 2;
+      OY = 0;
       fx.width = Math.round(FW * dpr);
       fx.height = Math.round(FH * dpr);
       if (fctx) fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -164,12 +189,14 @@ export function Ending() {
 
     function buildAscii() {
       geom();
-      var EXT = Math.round(2 * (540 * SCL + 30)),
+      var m = metricsRef.current;
+      var handsObj = currentHandsRef.current || createHands(m.armLength);
+      var EXT = Math.round(2 * (m.armLength * m.handScale + 30)),
           px = Math.round(EXT * S1),
           cols = Math.max(40, Math.round(px / CS));
       var svg = '<svg xmlns="' + NS + '" width="' + cols + '" height="' + cols + '" viewBox="' + (-EXT / 2) + ' ' + (-EXT / 2) + ' ' + EXT + ' ' + EXT + '">' +
-                '<g transform="rotate(' + (TH_D * 180 / Math.PI) + ') scale(' + SCL + ')">' +
-                paint(DARK, 'ascii') +
+                '<g transform="rotate(' + (TH_D * 180 / Math.PI) + ') scale(' + m.handScale + ')">' +
+                paint(handsObj.DARK, 'ascii') +
                 '</g></svg>';
       var im = new Image();
       im.onload = function() {
@@ -277,6 +304,12 @@ export function Ending() {
     function frame(t) {
       if (!isRunning) return;
 
+      // When ending section is offscreen, idle completely with zero DOM queries
+      if (!endingInView) {
+        rafId = requestAnimationFrame(frame);
+        return;
+      }
+
       var tr = trackRef.current;
       var r = tr ? tr.getBoundingClientRect() : null;
       if (tr && r) {
@@ -287,8 +320,8 @@ export function Ending() {
         stageIsActive = (r.top <= window.innerHeight && r.bottom >= 0);
       }
 
-      // If the stage is far offscreen and not active, idle
-      if (!stageIsActive && !endingInView && r && (r.top > window.innerHeight * 2 || r.bottom < -window.innerHeight * 2)) {
+      // If the reach stage is offscreen, only update horizontal cards
+      if (!stageIsActive) {
         hzFrame();
         rafId = requestAnimationFrame(frame);
         return;
@@ -362,19 +395,23 @@ export function Ending() {
       }
 
       var touchElapsed = warm ? (t - tm0) / 1000 : 0;
-
-      // Responsive B6 Layout: Check portrait vs landscape
-      var isPortrait = window.innerWidth / window.innerHeight < 1.0 || window.innerWidth <= 768;
-      var narrowShift = isPortrait ? 72 : 0; // Hands meet at ~62% on portrait
       var postEase = warm ? ease(clamp(touchElapsed / 1.0)) : 0;
-      var dropY = (36 * postEase) + narrowShift;
-      var baseScale = isPortrait ? SCL * 0.82 : SCL; // 80-85% scale on portrait
+
+      var m = metricsRef.current;
+      var handsObj = currentHandsRef.current || createHands(m.armLength);
+      var baseScale = m.handScale;
       var currentScale = baseScale * (1 - 0.08 * postEase);
 
-      var dx = FD.x - dirD[0] * k + sw,
-          dy = FD.y - dirD[1] * k + dropY,
-          lx = FL.x - dirL[0] * k - sw,
-          ly = FL.y - dirL[1] * k + dropY;
+      var curTD = rot(TH_D, handsObj.DARK.tip[0] * currentScale, handsObj.DARK.tip[1] * currentScale);
+      var curTL = rot(TH_L, handsObj.LIGHT.tip[0] * currentScale, handsObj.LIGHT.tip[1] * currentScale);
+
+      var curFD = { x: m.meetX - curTD[0], y: m.meetY - curTD[1] };
+      var curFL = { x: m.meetX - curTL[0], y: m.meetY - curTL[1] };
+
+      var dx = curFD.x - dirD[0] * k + sw,
+          dy = curFD.y - dirD[1] * k,
+          lx = curFL.x - dirL[0] * k - sw,
+          ly = curFL.y - dirL[1] * k;
 
       if (hdRef.current) {
         hdRef.current.setAttribute('transform', 'translate(' + dx.toFixed(1) + ' ' + dy.toFixed(1) + ') rotate(' + (TH_D * 180 / Math.PI) + ') scale(' + currentScale.toFixed(3) + ')');
@@ -393,11 +430,21 @@ export function Ending() {
         }
       }
 
-      // Touch bloom animation (expanding circle from exact touch point)
-      var touchSvgX = (lx + dx) / 2 + (tL[0] + tD[0]) / 2;
-      var touchSvgY = (ly + dy) / 2 + (tL[1] + tD[1]) / 2;
+      // Touch bloom animation & Dotted ring centred on exact meeting point
+      var touchSvgX = m.meetX;
+      var touchSvgY = m.meetY;
       var touchVpX = OX + touchSvgX * S1;
       var touchVpY = OY + touchSvgY * S1;
+
+      if (ringRef.current) {
+        var ringEl = ringRef.current;
+        ringEl.style.left = touchVpX.toFixed(1) + 'px';
+        ringEl.style.top = touchVpY.toFixed(1) + 'px';
+        ringEl.style.transform = 'translate(-50%, -50%)';
+        var ringW = m.isPortrait ? (FW * 0.70) : Math.min(FW * 0.86, 640);
+        ringEl.style.width = ringW.toFixed(1) + 'px';
+        ringEl.style.height = ringW.toFixed(1) + 'px';
+      }
 
       if (bloomRef.current) {
         if (!warm) {
@@ -644,6 +691,7 @@ export function Ending() {
         subRef={subRef}
         hintRef={hintRef}
         bloomRef={bloomRef}
+        ringRef={ringRef}
         liveAnnounceText={liveAnnounce}
       />
 

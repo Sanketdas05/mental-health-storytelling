@@ -16,8 +16,7 @@ export function addAnxietyScene(timeline) {
     .to({}, { duration: 8.5 })
 
     .addLabel('anxiety-exit')
-    // Dissolve vortex out toward the hands scene
+    // Dissolve text and canvas content out toward the hands scene while preserving atmospheric background
     .to('#cap', { opacity: 0, duration: 0.4, ease: 'power2.in' })
-    .to('#wall', { opacity: 0, duration: 0.5, ease: 'power2.in' }, '<0.1')
-    .to('#anx', { autoAlpha: 0, duration: 0.2 }, '<0.3');
+    .to('#wall', { opacity: 0, duration: 0.5, ease: 'power2.in' }, '<0.1');
 }

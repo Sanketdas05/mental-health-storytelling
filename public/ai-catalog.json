@@ -1,0 +1,26 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Inside the Smile",
+    "documentationUrl": "https://inside-the-smile.vercel.app/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:inside-the-smile:story:experience",
+      "type": "application/json",
+      "displayName": "Inside the Smile Interactive Narrative",
+      "description": "Interactive scroll experience exploring mental health, anxiety, and reaching out for support.",
+      "url": "https://inside-the-smile.vercel.app/",
+      "tags": ["mental-health", "interactive-story", "art"]
+    },
+    {
+      "identifier": "urn:air:inside-the-smile:resources:helplines",
+      "type": "application/json",
+      "displayName": "Mental Health Crisis Helplines",
+      "description": "Verified global mental health crisis lifelines and free support services.",
+      "url": "https://inside-the-smile.vercel.app/#helplines",
+      "tags": ["mental-health", "crisis-support", "helplines"]
+    }
+  ]
+}
+

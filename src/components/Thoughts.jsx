@@ -195,6 +195,7 @@ export function Thoughts() {
 
     let lastStaticTime = 0;
     let animId;
+    let phoneSceneEl = null;
 
     const loop = (timestamp) => {
       animId = requestAnimationFrame(loop);
@@ -202,6 +203,12 @@ export function Thoughts() {
       // Only stop phone CRT static once phone scene has fully completed / dollied away (p >= 0.55)
       const p = progressRef.current;
       if (p >= 0.55) {
+        return;
+      }
+
+      // Skip CRT rendering if phone scene is inactive / hidden before phase 3
+      const el = phoneSceneEl || (phoneSceneEl = document.getElementById('phoneScene'));
+      if (el && el.style.visibility === 'hidden' && p <= 0) {
         return;
       }
 

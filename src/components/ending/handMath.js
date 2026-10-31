@@ -88,7 +88,7 @@ export function fing(bx, by, a0, L, B, w0, w1) {
   };
 }
 
-export function hand(spec) {
+export function hand(spec, armLength = 540) {
   var X = [-33, -10, 14, 36], Y = [-104, -112, -108, -92],
       W0 = spec.W0 || [21, 22, 20, 17], W1 = spec.W1 || [13, 13, 12, 10],
       SP = [-0.11, -0.03, 0.06, 0.16], F = [];
@@ -97,7 +97,11 @@ export function hand(spec) {
   }
   F.push(fing(-46, -46, spec.ta, spec.TL, spec.TB, 26, 15));
   var palm = sc([[-28, 10], [-48, -14], [-57, -46], [-46, -92], [-34, -110], [-10, -118], [14, -114], [38, -100], [46, -68], [41, -30], [30, 10], [0, 18]]);
-  var arm = 'M-30 4C-32 130 -42 300 -52 540L52 540C42 300 32 130 30 4Z';
+  
+  var L = armLength;
+  var wL = Math.round(30 + 0.041 * L);
+  var arm = 'M-30 4C-32 ' + Math.round(L * 0.24) + ' -42 ' + Math.round(L * 0.55) + ' -' + wL + ' ' + L + 'L' + wL + ' ' + L + 'C42 ' + Math.round(L * 0.55) + ' 32 ' + Math.round(L * 0.24) + ' 30 4Z';
+
   var tend = [[-24, -98, -16, -14], [-4, -104, 0, -10], [16, -100, 13, -12]].map(function(a) {
     return 'M' + a[0] + ' ' + a[1] + 'Q' + ((a[0] + a[2]) / 2 + 3) + ' ' + ((a[1] + a[3]) / 2) + ' ' + a[2] + ' ' + a[3];
   }).join('');
@@ -109,7 +113,29 @@ export function hand(spec) {
   ].map(function(a) {
     return 'M' + a[0] + ' ' + a[1] + 'L' + a[2] + ' ' + a[3];
   }).join(' ');
-  return { shapes: [arm, palm].concat(F.map(function(f) { return f.d; })), F: F, tip: F[0].tip, tend: tend, palmHatch: palmHatch };
+  return { shapes: [arm, palm].concat(F.map(function(f) { return f.d; })), F: F, tip: F[0].tip, tend: tend, palmHatch: palmHatch, armLength: L, wL: wL };
+}
+
+export function createHands(armLength = 540) {
+  var l = hand({
+    L: [[46, 30, 24], [50, 32, 26], [47, 31, 25], [38, 25, 19]],
+    B: [[0.02, 0.08, 0.12], [0.02, 0.1, 0.14], [0.04, 0.12, 0.17], [0.06, 0.16, 0.2]],
+    ta: -0.8,
+    TL: [34, 28, 24],
+    TB: [-0.05, 0.15, 0.2]
+  }, armLength);
+
+  var d = hand({
+    L: [[48, 32, 26], [20, 14, 10], [19, 13, 9], [16, 11, 8]],
+    B: [[0, 0.02, 0.03], [0.45, 0.55, 0.55], [0.5, 0.6, 0.55], [0.55, 0.65, 0.55]],
+    W0: [21, 24, 22, 19],
+    W1: [13, 19, 18, 15],
+    ta: -0.45,
+    TL: [30, 26, 22],
+    TB: [0.3, 0.5, 0.55]
+  }, armLength);
+
+  return { LIGHT: l, DARK: d };
 }
 
 export var LIGHT = hand({
@@ -155,7 +181,7 @@ export function paint(h, mode) {
       // Faint warm shadow under the palm
       '<ellipse cx="0" cy="-45" rx="36" ry="24" fill="#c98a58" fill-opacity="0.22"/>' +
       // Lit edge outline along lit side of forearm in dark phase (reads lit from hand side)
-      '<path d="M-30 4C-32 130 -42 300 -52 540" fill="none" stroke="rgba(246, 241, 231, 0.45)" stroke-width="2" stroke-linecap="round"/>' +
+      '<path d="M-30 4C-32 ' + Math.round((h.armLength || 540) * 0.24) + ' -42 ' + Math.round((h.armLength || 540) * 0.55) + ' -' + (h.wL || Math.round(30 + 0.041 * (h.armLength || 540))) + ' ' + (h.armLength || 540) + '" fill="none" stroke="rgba(246, 241, 231, 0.45)" stroke-width="2" stroke-linecap="round"/>' +
       // Highlight & mid-shadow along finger spine
       '<g fill="none" stroke-linecap="round">' +
       '<g stroke="#fff" stroke-opacity=".75" stroke-width="2.6">' +
@@ -213,6 +239,39 @@ export function paint(h, mode) {
     h.F.map(function(f) { return '<path d="' + f.hl + '"/>'; }).join('') +
     '</g>'
   );
+}
+
+export function getStageMetrics(stageW, stageH) {
+  var aspect = stageW / (stageH || 1);
+  var isPortrait = aspect < 1.1;
+  var VW = Math.min(1000, Math.max(260, 600 * aspect));
+  var CX = VW / 2;
+
+  var handScale;
+  var meetX, meetY;
+
+  if (isPortrait) {
+    handScale = Math.min(0.80, Math.max(0.55, VW / 450));
+    meetX = CX;
+    meetY = 600 * 0.60; // 360 units (60% of height)
+  } else {
+    handScale = SCL; // 0.95
+    meetX = 517;
+    meetY = 255;
+  }
+
+  var armLength = Math.ceil(Math.hypot(VW, 600) / handScale) + 120;
+
+  return {
+    aspect: aspect,
+    isPortrait: isPortrait,
+    VW: VW,
+    CX: CX,
+    handScale: handScale,
+    meetX: meetX,
+    meetY: meetY,
+    armLength: armLength
+  };
 }
 
 export var TH_D = Math.PI * 0.29;
