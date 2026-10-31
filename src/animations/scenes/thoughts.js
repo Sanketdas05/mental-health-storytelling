@@ -4,10 +4,10 @@ export function addThoughtsScene(timeline) {
   return timeline
     .addLabel('phone-enter')
     // ── 1. Enter Phase 3 Phone Scene (smooth match-cut from workstation) ──
-    .fromTo('#phoneScene', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.55, ease: 'power1.inOut' })
+    .fromTo('#phoneScene', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5, ease: 'power1.inOut' })
     .fromTo('#ph',
       { scale: 0.90, opacity: 0, y: 16 },
-      { scale: 1.0, opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' },
+      { scale: 1.0, opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
       '<'
     )
 

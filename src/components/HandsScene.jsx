@@ -23,7 +23,7 @@ const HELPLINES = [
   {
     country: 'United States & Canada',
     number: '988',
-    desc: 'Suicide & Crisis Lifeline · Free, confidential, 24/7 call or text'
+    desc: 'Suicide & Crisis Lifeline · Free, 24/7 call or text'
   },
   {
     country: 'United Kingdom',
@@ -38,7 +38,7 @@ const HELPLINES = [
   {
     country: 'International / Worldwide',
     number: 'findahelpline.com',
-    desc: 'Free, confidential support services searchable in 130+ countries'
+    desc: 'Free, support services searchable in 130+ countries'
   }
 ];
 
@@ -339,7 +339,7 @@ export function HandsScene() {
           {/* 4. Helplines by Country */}
           <section className="guide-section" aria-labelledby="helplines-title">
             <h3 id="helplines-title" className="guide-heading type-narrator">
-              CONFIDENTIAL HELPLINES · AVAILABLE 24/7
+              HELPLINES · AVAILABLE 24/7
             </h3>
             <div className="helplines-grid">
               {HELPLINES.map((hl) => (

@@ -6,6 +6,7 @@ export const A = {
   ctx: null,
   on: false,
   hushed: false,
+  anxiousDroneMuted: false,
   master: null,
   lp: null,
   drone: null,
@@ -105,16 +106,16 @@ export function soundOn(v) {
     A.ctx.resume();
     A.master.gain.cancelScheduledValues(A.ctx.currentTime);
     A.master.gain.linearRampToValueAtTime(0.9, A.ctx.currentTime + 1.2);
+    if (hopefulNodes && hopefulNodes.masterGain) {
+      hopefulNodes.masterGain.gain.cancelScheduledValues(A.ctx.currentTime);
+      hopefulNodes.masterGain.gain.linearRampToValueAtTime(0.065, A.ctx.currentTime + 0.5);
+    }
   } else if (A.ctx) {
     A.master.gain.cancelScheduledValues(A.ctx.currentTime);
-    A.master.gain.linearRampToValueAtTime(0, A.ctx.currentTime + 0.4);
-  }
-
-  if (typeof document !== 'undefined') {
-    const b = document.querySelector('.u-snd') || document.querySelector('.minimal-sound-btn');
-    if (b) {
-      b.textContent = v ? 'sound on' : 'sound off';
-      b.setAttribute('aria-pressed', v);
+    A.master.gain.linearRampToValueAtTime(0, A.ctx.currentTime + 0.3);
+    if (hopefulNodes && hopefulNodes.masterGain) {
+      hopefulNodes.masterGain.gain.cancelScheduledValues(A.ctx.currentTime);
+      hopefulNodes.masterGain.gain.linearRampToValueAtTime(0, A.ctx.currentTime + 0.3);
     }
   }
 }
@@ -267,13 +268,17 @@ function updateProgression(progress) {
       A.hissGain.gain.setTargetAtTime(hissVol, now, 0.2);
     }
 
-    // Drone acoustics: lowpass filter and gain scale with tension
+    // Drone acoustics: lowpass filter and gain scale with tension (silenced if resolution audio active)
     if (A.lp && A.drone) {
-      const cutoff = 160 + tension * 140;
-      A.lp.frequency.setTargetAtTime(cutoff, now, 0.35);
+      if (A.anxiousDroneMuted) {
+        A.drone.gain.setTargetAtTime(0, now, 0.4);
+      } else {
+        const cutoff = 160 + tension * 140;
+        A.lp.frequency.setTargetAtTime(cutoff, now, 0.35);
 
-      const dVol = 0.04 + tension * 0.045;
-      A.drone.gain.setTargetAtTime(dVol, now, 0.35);
+        const dVol = 0.04 + tension * 0.045;
+        A.drone.gain.setTargetAtTime(dVol, now, 0.35);
+      }
     }
   }
 }
@@ -483,6 +488,165 @@ class AudioManager {
 
   thump(v = 0.5) {
     thump(v);
+  }
+
+  silenceAnxiousDrone() {
+    A.anxiousDroneMuted = true;
+    U.state.tension = 0;
+    if (A.drone && A.ctx) {
+      try {
+        A.drone.gain.cancelScheduledValues(A.ctx.currentTime);
+        A.drone.gain.linearRampToValueAtTime(0, A.ctx.currentTime + 1.2);
+      } catch (_) {}
+    }
+    if (A.hissGain && A.ctx) {
+      try {
+        A.hissGain.gain.cancelScheduledValues(A.ctx.currentTime);
+        A.hissGain.gain.linearRampToValueAtTime(0, A.ctx.currentTime + 0.8);
+      } catch (_) {}
+    }
+  }
+
+  restoreAnxiousDrone() {
+    A.anxiousDroneMuted = false;
+    if (A.drone && A.ctx && A.on) {
+      try {
+        A.drone.gain.cancelScheduledValues(A.ctx.currentTime);
+        A.drone.gain.linearRampToValueAtTime(0.04, A.ctx.currentTime + 1.2);
+      } catch (_) {}
+    }
+  }
+
+  startCalmHopefulPad() {
+    startCalmHopefulPad();
+  }
+
+  stopCalmHopefulPad() {
+    stopCalmHopefulPad();
+  }
+}
+
+// ── 13. Calm & Hopeful Soundscape (Resolution / Relief) ─────────────────────
+// Warm, luminous F-Major / C-Major acoustic pad with slow breathing filter
+// and gentle ethereal chime reflections. Replaces the anxious drone.
+let hopefulNodes = null;
+let hopefulChimeTimer = null;
+
+export function startCalmHopefulPad() {
+  if (hopefulNodes || !A.ctx || !A.on) return;
+  const c = A.ctx;
+  const now = c.currentTime;
+
+  try {
+    const masterGain = c.createGain();
+    masterGain.gain.setValueAtTime(0, now);
+    masterGain.gain.linearRampToValueAtTime(0.065, now + 2.0); // Gentle, slow fade-in
+    masterGain.connect(A.master || c.destination);
+
+    // Warm, open, uplifting chord voicing (F major 9 / C major):
+    // F3 (174.61), C4 (261.63), A4 (440.00), G4 (392.00)
+    // Plus gentle detuned chorus pairings for soft, living shimmer
+    const freqs = [
+      { f: 174.61, type: 'sine', detune: 0 },
+      { f: 175.25, type: 'sine', detune: 0 },
+      { f: 261.63, type: 'triangle', detune: -3 },
+      { f: 392.00, type: 'sine', detune: 4 },
+      { f: 440.00, type: 'sine', detune: -2 }
+    ];
+
+    const filter = c.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(480, now);
+
+    // Slow breathing LFO to gently modulate the filter cutoff (~5.5s gentle breath)
+    const lfo = c.createOscillator();
+    const lfoGain = c.createGain();
+    lfo.frequency.setValueAtTime(0.18, now);
+    lfoGain.gain.setValueAtTime(140, now);
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    lfo.start();
+
+    const oscs = freqs.map(({ f, type, detune }) => {
+      const osc = c.createOscillator();
+      const voiceGain = c.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(f, now);
+      osc.detune.setValueAtTime(detune, now);
+      voiceGain.gain.setValueAtTime(0.2, now);
+      osc.connect(voiceGain);
+      voiceGain.connect(filter);
+      osc.start();
+      return osc;
+    });
+
+    filter.connect(masterGain);
+
+    // Periodic gentle hopeful chime (peaceful acoustic bell reflection)
+    const scheduleNextChime = () => {
+      if (!hopefulNodes || !A.on) return;
+      const delay = 6000 + Math.random() * 4000; // every 6 - 10 seconds
+      hopefulChimeTimer = setTimeout(() => {
+        playDelicateChime();
+        scheduleNextChime();
+      }, delay);
+    };
+
+    const playDelicateChime = () => {
+      if (!A.ctx || !A.on || !hopefulNodes) return;
+      const chimeCtx = A.ctx;
+      const t = chimeCtx.currentTime;
+      const chimeNotes = [523.25, 659.25, 783.99, 880.00, 1046.50]; // C5, E5, G5, A5, C6
+      const note = chimeNotes[Math.floor(Math.random() * chimeNotes.length)];
+
+      const o = chimeCtx.createOscillator();
+      const g = chimeCtx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(note, t);
+
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.018, t + 0.08); // soft attack
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 3.8); // lingering decay
+
+      o.connect(g);
+      g.connect(A.master || chimeCtx.destination);
+      o.start(t);
+      o.stop(t + 4.0);
+    };
+
+    scheduleNextChime();
+
+    hopefulNodes = {
+      masterGain,
+      filter,
+      lfo,
+      lfoGain,
+      oscs
+    };
+  } catch (err) {
+    hopefulNodes = null;
+  }
+}
+
+export function stopCalmHopefulPad() {
+  if (hopefulChimeTimer) {
+    clearTimeout(hopefulChimeTimer);
+    hopefulChimeTimer = null;
+  }
+  if (!hopefulNodes) return;
+  const nodes = hopefulNodes;
+  hopefulNodes = null;
+
+  if (A.ctx) {
+    try {
+      nodes.masterGain.gain.linearRampToValueAtTime(0, A.ctx.currentTime + 0.8);
+      setTimeout(() => {
+        try {
+          nodes.oscs.forEach(o => o.stop());
+          nodes.lfo.stop();
+        } catch (_) {}
+      }, 900);
+    } catch (_) {}
   }
 }
 

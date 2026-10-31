@@ -9,22 +9,27 @@ export function addLivingRoomScene(timeline) {
       const filmTl = st.animation
       let targetTime = null
       if (filmTl.labels['phone-enter'] !== undefined) {
-        targetTime = filmTl.labels['phone-enter'] + 0.38
+        targetTime = filmTl.labels['phone-enter'] + 0.5
       } else if (filmTl.labels['workstation-exit'] !== undefined) {
-        targetTime = filmTl.labels['workstation-exit'] + 0.38
+        targetTime = filmTl.labels['workstation-exit'] + 0.5
       }
 
       if (targetTime !== null) {
         const prog = targetTime / filmTl.totalDuration()
         const targetScroll = st.start + prog * (st.end - st.start)
-        if (window.__lenis) {
-          window.__lenis.scrollTo(targetScroll, {
-            duration: 1.0,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-          })
-        } else {
-          window.scrollTo({ top: targetScroll, behavior: 'smooth' })
+        
+        // Immediately sync scrub tween & animation progress to prevent scrub lag from flashing workstation
+        if (st.scrubTween) {
+          st.scrubTween.progress(1)
         }
+        filmTl.progress(prog)
+
+        if (window.__lenis) {
+          window.__lenis.scrollTo(targetScroll, { immediate: true })
+        } else {
+          window.scrollTo(0, targetScroll)
+        }
+        st.update()
       }
     }
     // No autoplay or timeout chains! Pauses on #m1 until user explicitly acts.

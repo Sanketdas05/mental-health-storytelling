@@ -5,13 +5,12 @@ import { addIntroScene } from './animations/scenes/intro'
 import { addLivingRoomScene } from './animations/scenes/livingRoom'
 import { addThoughtsScene } from './animations/scenes/thoughts'
 import { addAnxietyScene } from './animations/scenes/anxiety'
-import { addHandsScene } from './animations/scenes/hands'
 import { Intro } from './components/Intro'
 import { Interlude } from './components/Interlude'
 import { LivingRoom } from './components/LivingRoom'
 import { Thoughts } from './components/Thoughts'
 import { AnxietyScene } from './components/AnxietyScene'
-import { HandsScene } from './components/HandsScene'
+import { Ending } from './components/Ending'
 import { StoryProgress } from './components/StoryProgress'
 import { EntryGate } from './components/EntryGate'
 import { CustomCursor } from './components/CustomCursor'
@@ -35,7 +34,7 @@ export default function App() {
   }
 
   useEffect(() => createScene(app, () => {
-    gsap.set('.interlude, .room-wrap, #phoneScene, .anxiety-scene, .hands-scene', { autoAlpha: 0 })
+    gsap.set('.interlude, .room-wrap, #phoneScene, .anxiety-scene', { autoAlpha: 0 })
     const film = gsap.timeline({
       scrollTrigger: {
         id: 'film',
@@ -62,6 +61,9 @@ export default function App() {
               // Immediately restore unzoomed desk if it was dollied
               if (self.direction === -1 && ep !== null && self.progress <= ep + 0.02) {
                 if (ws.__resetDolly) ws.__resetDolly()
+              } else if (ws.__isDollied && ws.__isDollied() && self.direction >= 0) {
+                ws.style.visibility = 'hidden'
+                ws.style.pointerEvents = 'none'
               }
 
               if (self.progress < dp - 0.02 && ws.__wsLeaveDesk) {
@@ -77,15 +79,16 @@ export default function App() {
               }
             }
           }
-          if (anxRef.current) {
-            const filmTl = self.animation;
-            if (filmTl && filmTl.labels && filmTl.labels['anxiety-enter'] !== undefined && filmTl.labels['anxiety-exit'] !== undefined) {
+          const filmTl = self.animation;
+          if (filmTl && filmTl.labels) {
+            // Anxiety Scene progress
+            if (anxRef.current && filmTl.labels['anxiety-enter'] !== undefined && filmTl.labels['anxiety-exit'] !== undefined) {
               const total = filmTl.totalDuration();
               const startProg = filmTl.labels['anxiety-enter'] / total;
               const exitProg = filmTl.labels['anxiety-exit'] / total;
               const local = Math.max(0, Math.min(1, (self.progress - startProg) / (exitProg - startProg)));
               anxRef.current.progress = local;
-            } else {
+            } else if (anxRef.current) {
               const t = self.progress;
               const local = Math.max(0, Math.min(1, (t - 0.58) / (0.88 - 0.58)));
               anxRef.current.progress = local;
@@ -103,7 +106,6 @@ export default function App() {
     addLivingRoomScene(film)
     addThoughtsScene(film)
     addAnxietyScene(film)
-    addHandsScene(film)
   }), [])
 
   useEffect(() => {
@@ -151,8 +153,10 @@ export default function App() {
         <LivingRoom soundEnabled={soundEnabled} />
         <Thoughts />
         <AnxietyScene stateRef={anxRef} />
-        <HandsScene />
       </div>
+
+      {/* ── Ending: scroll-driven section after the pinned story ── */}
+      <Ending />
 
       <span className="sr-only">An interactive story about reaching out for support.</span>
     </main>

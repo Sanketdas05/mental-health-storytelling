@@ -10,10 +10,10 @@ const SEEDS = [
   [.36, .26, "what if they leave", .54],
   [.64, .26, "you're too much", .58],
   [.50, .36, "why can't I just be normal", .62],
-  [.32, .42, "nobody gets it", .67],
-  [.68, .42, "don't be a burden", .72],
-  [.50, .50, "just say you're fine", .77],
-  [.50, .56, "keep smiling", .82]
+  [.32, .42, "nobody gets it", .66],
+  [.68, .42, "don't be a burden", .70],
+  [.50, .50, "just say you're fine", .74],
+  [.50, .56, "keep smiling", .78]
 ];
 
 // Ambient whispered background thoughts
@@ -198,6 +198,13 @@ export function Thoughts() {
 
     const loop = (timestamp) => {
       animId = requestAnimationFrame(loop);
+
+      // Only stop phone CRT static once phone scene has fully completed / dollied away (p >= 0.55)
+      const p = progressRef.current;
+      if (p >= 0.55) {
+        return;
+      }
+
       state.time += 0.016;
 
       if (state.charFlash > 0.01) state.charFlash *= 0.88;
@@ -293,15 +300,18 @@ export function Thoughts() {
     const fx = fg.getContext('2d');
     if (!cx || !fx) return;
 
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     let W = window.innerWidth;
     let H = window.innerHeight;
     const resizeCanvases = () => {
       W = window.innerWidth;
       H = window.innerHeight;
-      cv.width = W;
-      cv.height = H;
-      fg.width = W;
-      fg.height = H;
+      cv.width = Math.round(W * dpr);
+      cv.height = Math.round(H * dpr);
+      fg.width = Math.round(W * dpr);
+      fg.height = Math.round(H * dpr);
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resizeCanvases();
 
@@ -317,6 +327,7 @@ export function Thoughts() {
       if (!charFigureReady) return;
       const cols = Math.ceil(W / CS);
       const rows = Math.ceil(H / CH);
+      // Man dimensions (0.90 height, 0.07 top) - exactly matching Phase 4 AnxietyScene
       const fh = H * 0.90;
       const fw = fh * (FIGW / FIGH);
       const figR = {
@@ -358,8 +369,8 @@ export function Thoughts() {
           const alpha = d[i * 4 + 3] / 255;
           const lum = LF[i];
 
-          // Glitch effect ONLY covers skin (lum >= 0.16), NOT hair or shirt!
-          const isSkin = (alpha > 0.15 && lum >= 0.16);
+          // Glitch effect covers skin and facial/anatomical contours
+          const isSkin = (alpha > 0.15 && lum >= 0.10);
           if (isSkin) {
             let tc = 9, wd = '';
             const eye = EYES.some(e => {
@@ -371,7 +382,7 @@ export function Thoughts() {
             });
             if (!eye) {
               seeds.forEach(s => {
-                const t = s.t + Math.hypot(cellX - s.x, cellY - s.y) / 2000 + (Math.random() - 0.5) * 0.03;
+                const t = s.t + Math.hypot(cellX - s.x, cellY - s.y) / 850 + (Math.random() - 0.5) * 0.02;
                 if (t < tc) {
                   tc = t;
                   wd = s.w;
@@ -456,14 +467,18 @@ export function Thoughts() {
 
     let animId;
     const frame = (now) => {
-      animId = requestAnimationFrame(frame);
-
       const p = progressRef.current;
+
+      // Only run figure and thought rendering when Phase 3 is active
+      if (p <= 0.005 || p >= 0.99) {
+        return;
+      }
+
       const fh = H * 0.90;
       const fw = fh * (FIGW / FIGH);
       const figR = {
         x: (W - fw) / 2,
-        y: H * 0.08,
+        y: H * 0.07,
         w: fw,
         h: fh,
         s: fw / FIGW
@@ -592,25 +607,48 @@ export function Thoughts() {
           const sx0 = (s[0] < 0.5 ? W * 0.16 : W * 0.84);
           const sy0 = H * (0.16 + 0.10 * (i % 7));
 
-          const x = lerp(sx0, figR.x + s[0] * figR.w, a);
-          const y = lerp(sy0, figR.y + s[1] * figR.h, a);
+          const targetX = figR.x + s[0] * figR.w;
+          const targetY = figR.y + s[1] * figR.h;
+
+          const x = lerp(sx0, targetX, a);
+          const y = lerp(sy0, targetY, a);
           const alpha = seg(p, s[3] - 0.14, s[3] - 0.08) * (1 - seg(p, s[3] - 0.015, s[3]));
 
-          cx.fillStyle = `rgba(233, 230, 223, ${Math.max(0, alpha * 0.94)})`;
+          const word = s[2];
+          const isTier1 = (word === "you're too much" || word === "what if they leave" || word === "nobody gets it" || word === "why can't I just be normal" || word === "don't be a burden");
+          const isTier2 = (word === "just say you're fine" || word === "keep smiling");
+
           cx.textAlign = 'center';
-          cx.fillText(s[2], x, y);
+
+          if (isTier1) {
+            // Tier 1: Full brightness + soft dark halo
+            cx.save();
+            cx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+            cx.shadowBlur = 12;
+            cx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, alpha * 0.98)})`;
+            cx.fillText(word, x, y);
+            cx.restore();
+          } else if (isTier2) {
+            // Tier 2: ~60% opacity
+            cx.fillStyle = `rgba(233, 230, 223, ${Math.max(0, alpha * 0.60)})`;
+            cx.fillText(word, x, y);
+          } else {
+            // Tier 3: ~35% opacity
+            cx.fillStyle = `rgba(215, 210, 200, ${Math.max(0, alpha * 0.35)})`;
+            cx.fillText(word, x, y);
+          }
         });
 
         // Ambient whispered background thoughts
         AMB.forEach(([w, u, v]) => {
           const a = (1 - seg(p, 0.82, 0.92)) * seg(p, 0.44, 0.52);
           if (a <= 0) return;
-          cx.fillStyle = `rgba(233, 230, 223, ${0.30 * a})`;
+          cx.fillStyle = `rgba(215, 210, 200, ${0.35 * a})`;
           cx.textAlign = 'center';
           cx.fillText(w, W * u + Math.sin(now / 2000 + u * 9) * 6, H * v);
         });
 
-        // GLITCH GLYPHS: Render letters of the thoughts + glitch glyphs (monochrome grey/white, NO green!)
+        // GLITCH GLYPHS: Render letters of the thoughts + glitch glyphs covering skin
         cx.font = `600 ${CS * 1.55}px "JetBrains Mono", monospace`;
         cx.textAlign = 'left';
         const t4 = (now / 110) | 0;
@@ -631,19 +669,39 @@ export function Thoughts() {
           const fadeOut = 1 - seg(p, 0.88, 0.96);
           const alpha = Math.min(1, (0.55 + q.L * 0.45) * fadeOut);
 
-          // Pure monochrome grey and white glitch palette inspired by Image 2
           cx.fillStyle = isGlitching ? '#ffffff' : `rgba(233, 230, 223, ${alpha})`;
           cx.fillText(ch, x - CS / 2, y);
         }
       }
     };
 
-    animId = requestAnimationFrame(frame);
+    let isAnimRunning = true;
+    function loop(now) {
+      if (!isAnimRunning) return;
+      frame(now);
+      animId = requestAnimationFrame(loop);
+    }
+    animId = requestAnimationFrame(loop);
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        isAnimRunning = false;
+        cancelAnimationFrame(animId);
+      } else {
+        if (!isAnimRunning) {
+          isAnimRunning = true;
+          animId = requestAnimationFrame(loop);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
+      isAnimRunning = false;
       cancelAnimationFrame(animId);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('resize', resizeCanvases);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 

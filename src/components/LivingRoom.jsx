@@ -336,8 +336,15 @@ export function LivingRoom({ soundEnabled = true }) {
 
     dollyTlRef.current?.kill();
 
+    const phoneScene = document.getElementById('phoneScene');
+    const ph = document.getElementById('ph');
+
     const tl = gsap.timeline({
       onComplete: () => {
+        if (ws) {
+          ws.style.visibility = 'hidden';
+          ws.style.pointerEvents = 'none';
+        }
         window.dispatchEvent(new CustomEvent('workstation:reveal-phone'));
       }
     });
@@ -365,10 +372,25 @@ export function LivingRoom({ soundEnabled = true }) {
         duration: 0.5
       }, '<0.15')
       .to(ws, {
-        opacity: 0,
+        autoAlpha: 0,
         duration: 0.35,
         ease: 'power1.inOut'
-      }, '> -0.25');
+      }, '> -0.3');
+
+    if (phoneScene) {
+      tl.fromTo(phoneScene,
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: 0.35, ease: 'power1.inOut' },
+        '<'
+      );
+    }
+    if (ph) {
+      tl.fromTo(ph,
+        { scale: 0.90, opacity: 0, y: 16 },
+        { scale: 1.0, opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
+        '<'
+      );
+    }
 
   }, []);
 
@@ -449,7 +471,13 @@ export function LivingRoom({ soundEnabled = true }) {
         bgLayer.style.transform = 'translate(0px, 0px)';
       }
 
-      gsap.set(el, { clearProps: 'opacity' });
+      if (el) {
+        el.style.visibility = '';
+        el.style.pointerEvents = '';
+      }
+      gsap.set(el, { clearProps: 'opacity,visibility,autoAlpha' });
+      gsap.set('#phoneScene', { clearProps: 'opacity,visibility,autoAlpha' });
+      gsap.set('#ph', { clearProps: 'opacity,visibility,scale,y' });
       gsap.set('.ws-phone-ambient-glow', { clearProps: 'opacity,scale' });
       gsap.set('.ws-phone-glow-svg', { clearProps: 'opacity' });
       gsap.set('.room-flash', { autoAlpha: 0 });

@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+@import './ending.css';
 
 /* ─── Tokens & Reset ─── */
 :root {
@@ -73,7 +74,8 @@ body {
   height: 100vh;
   overflow: hidden;
   position: relative;
-  background: #0b0b0c;
+  background: var(--bg, #0b0b0c);
+  transition: background-color 0.8s ease;
 }
 
 .scene {
@@ -126,7 +128,7 @@ h2 em {
 .story-progress {
   z-index: 10;
   position: fixed;
-  left: 24px;
+  left: calc(24px + env(safe-area-inset-left, 0px));
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -138,6 +140,12 @@ h2 em {
   writing-mode: vertical-rl;
   letter-spacing: .12em;
   mix-blend-mode: screen;
+}
+
+@media (max-width: 480px) {
+  .story-progress {
+    display: none !important;
+  }
 }
 
 .progress-track {
@@ -832,7 +840,7 @@ h2 em {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center center;
+  object-position: 55% 50%;
   filter: brightness(0.90) contrast(1.06) saturate(0.82);
   user-select: none;
   pointer-events: none;
@@ -1294,12 +1302,13 @@ h2 em {
 .ws-phone-discreet-cue {
   position: absolute;
   z-index: 12;
-  bottom: clamp(24px, 4.5vh, 48px);
-  right: clamp(24px, 4.5vw, 64px);
+  bottom: calc(clamp(24px, 4.5vh, 48px) + env(safe-area-inset-bottom, 0px));
+  right: calc(clamp(24px, 4.5vw, 64px) + env(safe-area-inset-right, 0px));
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   gap: 8px;
-  padding: 7px 16px;
+  padding: 8px 18px;
   border-radius: 999px;
   background: rgba(12, 13, 17, 0.75);
   backdrop-filter: blur(10px);
@@ -1955,14 +1964,13 @@ h2 em {
   pointer-events: none;
 }
 
-/* ── Layer 1: Dark Workstation Backdrop (NO blue-grey) ── */
+/* ── Layer 1: Dark Atmospheric Backdrop (NO desk flash) ── */
 .phone-scene-backdrop {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 50% 50%, rgba(18, 17, 15, 0.38) 0%, rgba(10, 10, 9, 0.95) 82%), url('/media/ws-desk.jpg') center center / cover no-repeat;
-  filter: brightness(0.24) contrast(1.24) sepia(0.08);
+  background: radial-gradient(circle at 50% 50%, rgba(18, 17, 15, 0.75) 0%, rgba(10, 10, 9, 0.98) 82%);
   opacity: 1;
   z-index: 1;
   pointer-events: none;
@@ -1987,7 +1995,8 @@ h2 em {
 /* ── B. Phase 3 Phone (≈80-85% viewport height, same tilt/perspective as desk art) ── */
 #ph.desk-phone-matchcut, #ph {
   position: relative;
-  height: min(84vh, 780px);
+  max-height: 78svh;
+  height: min(78svh, 720px);
   width: min(390px, 84vw);
   aspect-ratio: 9 / 18;
   transform: perspective(1200px) rotateX(15deg) rotateY(-8deg) rotateZ(-6deg);
@@ -2280,7 +2289,7 @@ h2 em {
 }
 
 /* Monospace thoughts matching the ASCII canvas engine aesthetic */
-.thought-item, .b {
+.thought-item {
   position: absolute;
   transform: translate(-50%, -50%);
   font-family: 'DM Mono', monospace;
@@ -2834,11 +2843,11 @@ h2 em {
   left: 0;
   right: 0;
   z-index: 100;
-  height: 48px;
+  height: calc(48px + env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: env(safe-area-inset-top, 0px) calc(24px + env(safe-area-inset-right, 0px)) 0 calc(24px + env(safe-area-inset-left, 0px));
   background: linear-gradient(to bottom, rgba(11, 11, 12, 0.85) 0%, rgba(11, 11, 12, 0) 100%);
   pointer-events: none;
 }
@@ -3458,13 +3467,15 @@ h2 em {
 /* ── Minimal Floating Audio Toggle Control ── */
 .minimal-sound-btn {
   position: fixed;
-  top: clamp(18px, 2.8vw, 32px);
-  right: clamp(20px, 3.2vw, 44px);
-  z-index: 200;
+  top: calc(clamp(18px, 2.8vw, 32px) + env(safe-area-inset-top, 0px));
+  right: calc(clamp(20px, 3.2vw, 44px) + env(safe-area-inset-right, 0px));
+  z-index: 999;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 16px;
   background: rgba(12, 12, 16, 0.78);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -3476,6 +3487,35 @@ h2 em {
   cursor: pointer;
   transition: all 0.22s ease;
   user-select: none;
+}
+
+:root.warm .minimal-sound-btn {
+  background: rgba(246, 241, 231, 0.88);
+  border: 1.5px solid rgba(60, 40, 20, 0.25);
+  color: #241a12;
+  box-shadow: 0 4px 16px rgba(60, 35, 10, 0.08);
+}
+
+:root.warm .minimal-sound-btn:hover {
+  background: rgba(238, 232, 220, 0.95);
+  border-color: rgba(60, 40, 20, 0.45);
+}
+
+:root.warm .minimal-sound-btn.is-active .sound-btn-label {
+  color: #241a12;
+}
+
+:root.warm .minimal-sound-btn.is-active .wave-bar {
+  background: #e0913c;
+}
+
+:root.warm .minimal-sound-btn.is-muted {
+  opacity: 0.6;
+  border-color: rgba(60, 40, 20, 0.15);
+}
+
+:root.warm .minimal-sound-btn.is-muted .sound-btn-label {
+  color: #8d877b;
 }
 
 .minimal-sound-btn:hover {
@@ -3534,4 +3574,3 @@ h2 em {
   animation: none;
   height: 2px;
 }
-

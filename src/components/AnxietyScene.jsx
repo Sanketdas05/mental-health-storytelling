@@ -76,9 +76,14 @@ export function AnxietyScene({ stateRef }) {
     const buildBuffers = () => {
       if (s.W === 0) return;
 
-      // Legible font & cell sizing so background words are clearly readable:
-      // ~7.5px width, ~10.2px height gives comfortable typographic readability
-      s.cs = Math.max(6.8, Math.min(8.8, s.W / 230));
+      // Cell size by viewport: >=1025 -> 8px, <=1024 -> 10px, <=480 -> 13px
+      if (s.W >= 1025) {
+        s.cs = 8.0;
+      } else if (s.W <= 480) {
+        s.cs = 13.0;
+      } else {
+        s.cs = 10.0;
+      }
       s.ch = s.cs * 1.36;
 
       s.IW = Math.ceil(s.W / s.cs);
@@ -90,18 +95,16 @@ export function AnxietyScene({ stateRef }) {
       s.drainedInk = new Float32Array(totalCells);
 
       // Aspect ratio factor to correct monospace font height vs width
-      // Monospace characters are taller than wide (ch / cs ~ 1.36), so width in grid units
-      // must be multiplied by (ch / cs) so the character does NOT become thin!
       const fontAspect = s.ch / s.cs;
 
-      // 1. Draw Boy with correct anatomical proportions
+      // 1. Draw Boy with correct anatomical proportions matching Phase 3 Thoughts figure 1:1
       if (charReady && charImg.naturalWidth > 0) {
         const off = document.createElement('canvas');
         off.width = s.IW;
         off.height = s.IH;
         const octx = off.getContext('2d', { willReadFrequently: true });
 
-        // Match Phase 3 figure.png dimensions (896 x 1200) and bounds (y: 0.07, h: 0.90) for a seamless cross-dissolve
+        // Match Phase 3 figure dimensions (896 x 1200) and bounds (0.90 height, 0.07 top) for seamless morph
         const FIGW = 896;
         const FIGH = 1200;
         const boyH = s.IH * 0.90;
@@ -122,7 +125,6 @@ export function AnxietyScene({ stateRef }) {
           const lum = ((r * 0.299 + g * 0.587 + b * 0.114) / 255) * alpha;
 
           if (alpha > 0.12) {
-            // Visible shirt, arms and silhouette: base silhouette luminance of 0.14
             s.charInk[i] = lum < 0.05 ? 0.14 : Math.max(0.14, Math.pow(lum, 0.90));
           } else {
             s.charInk[i] = 0;
@@ -130,7 +132,7 @@ export function AnxietyScene({ stateRef }) {
         }
       }
 
-      // 2. Draw Looming Faces (anxiety.jpeg artwork)
+      // 2. Draw Looming Faces (reduce faces on small screens: 6 on desktop, 3 on phones)
       if (facesReady && facesImg.naturalWidth > 0) {
         const off = document.createElement('canvas');
         off.width = s.IW;
@@ -138,7 +140,9 @@ export function AnxietyScene({ stateRef }) {
         const octx = off.getContext('2d', { willReadFrequently: true });
 
         const facesAspect = facesImg.naturalWidth / facesImg.naturalHeight;
-        const facesH = s.IH * 0.82;
+        const isSmall = s.W <= 768;
+        // On small screens crop to 3 central faces, on desktop show full 6 faces
+        const facesH = s.IH * (isSmall ? 0.72 : 0.82);
         const facesW = facesH * facesAspect * fontAspect;
         const facesX = (s.IW - facesW) / 2;
         const facesY = -s.IH * 0.04;
@@ -251,11 +255,11 @@ export function AnxietyScene({ stateRef }) {
     facesImg.src = '/media/looming-faces.jpg';
 
     const resize = () => {
-      const r = devicePixelRatio || 1;
+      const r = Math.min(window.devicePixelRatio || 1, 1.5);
       s.W = window.innerWidth;
       s.H = window.innerHeight;
-      canvas.width = s.W * r;
-      canvas.height = s.H * r;
+      canvas.width = Math.round(s.W * r);
+      canvas.height = Math.round(s.H * r);
       ctx.setTransform(r, 0, 0, r, 0, 0);
       buildBuffers();
     };
@@ -290,13 +294,11 @@ export function AnxietyScene({ stateRef }) {
 
     // ── Main Render Loop ──────────────────────────────────────────────────
     const loop = (now) => {
-      s.animId = requestAnimationFrame(loop);
-
       const p = Math.max(0, s.progress);
       const { W, H, px, py, charInk, facesInk, drainedInk, IW, IH, cs, ch } = s;
 
       // ── Performance optimization: If scene is idle/invisible, skip canvas pipeline entirely ──
-      if (p < 0 || p >= 0.995) {
+      if (p >= 0.995) {
         if (s.cpx > 0) ctx.clearRect(0, 0, W, H);
         return;
       }
@@ -395,7 +397,7 @@ export function AnxietyScene({ stateRef }) {
               ? Math.max(L_boy * dimFactor, L_faces * faceEmergence * 0.85)
               : L_boy * dimFactor;
             const isShirtOrArm = L_boy <= 0.16;
-            // Slightly visible shirt and arms (a ~ 0.32..0.38)
+            // Slightly visible shirt and left arm (a ~ 0.32..0.38)
             a = Math.min(1, Math.max(isShirtOrArm ? 0.32 : 0.44, combinedL * 1.45) * cleanFade);
             const rIdx = Math.min(rampLen - 1, Math.max(isShirtOrArm ? 1 : 0, (combinedL * rampLen) | 0));
             chr = RAMP[rIdx];
@@ -475,33 +477,54 @@ export function AnxietyScene({ stateRef }) {
         }
       }
 
-      // ── Dynamic Tension Caption (Narrator Job: small sans caps) ──────────
+      // ── Dynamic Tension Caption (Narrator Job: small sans caps at ~60% opacity) ──
       let cp = 'Racing thoughts';
       if (p > 0.72) {
         cp = 'Completely drained.';
-        // Story color code: Lime drains completely to muted ash-grey
-        caption.style.color = '#7e7b75';
+        // Story color code: Lime drains completely to muted ash-grey at ~60% opacity
+        caption.style.color = 'rgba(180, 175, 165, 0.65)';
       } else if (p > 0.42) {
         cp = 'The voices crowd in.';
-        caption.style.color = 'rgba(233, 230, 223, 0.92)';
+        caption.style.color = 'rgba(233, 230, 223, 0.60)';
       } else if (p > 0.22) {
         cp = 'You keep smiling. It keeps growing.';
-        caption.style.color = 'rgba(233, 230, 223, 0.92)';
+        caption.style.color = 'rgba(233, 230, 223, 0.60)';
       } else {
-        caption.style.color = 'rgba(233, 230, 223, 0.92)';
+        caption.style.color = 'rgba(233, 230, 223, 0.60)';
       }
 
       if (caption.textContent !== cp) caption.textContent = cp;
       caption.style.opacity = String(seg(p, 0.22, 0.38) * cleanFade);
     };
 
-    s.animId = requestAnimationFrame(loop);
+    let isAnxRunning = true;
+    const anxLoop = (now) => {
+      if (!isAnxRunning) return;
+      loop(now);
+      s.animId = requestAnimationFrame(anxLoop);
+    };
+    s.animId = requestAnimationFrame(anxLoop);
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        isAnxRunning = false;
+        cancelAnimationFrame(s.animId);
+      } else {
+        if (!isAnxRunning) {
+          isAnxRunning = true;
+          s.animId = requestAnimationFrame(anxLoop);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
+      isAnxRunning = false;
       cancelAnimationFrame(s.animId);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onPointer);
       window.removeEventListener('pointerleave', onPointerLeave);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 
