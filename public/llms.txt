@@ -1,8 +1,8 @@
-# Inside the Smile
+# I'm fine
 
 > An interactive visual narrative exploring internal thoughts, emotional burnout, and the power of reaching out for mental health support.
 
-Inside the Smile is an interactive, scroll-driven web experience depicting the daily pressure of hiding anxiety behind a smile and the transformative moment of connection.
+I'm fine is an interactive, scroll-driven web experience depicting the daily pressure of hiding anxiety behind a smile and the transformative moment of connection.
 
 ## Interactive Story Chapters
 

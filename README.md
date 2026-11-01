@@ -1,4 +1,4 @@
-# Inside the Smile
+# I'm fine
 
 A scroll-controlled React + GSAP story about the emotions people may carry without showing them. It uses plain JavaScript, not TypeScript.
 

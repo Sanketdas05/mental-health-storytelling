@@ -1,14 +1,14 @@
 {
   "specVersion": "1.0",
   "host": {
-    "displayName": "Inside the Smile",
+    "displayName": "I'm fine",
     "documentationUrl": "https://inside-the-smile.vercel.app/llms.txt"
   },
   "entries": [
     {
       "identifier": "urn:air:inside-the-smile:story:experience",
       "type": "application/json",
-      "displayName": "Inside the Smile Interactive Narrative",
+      "displayName": "I'm fine Interactive Narrative",
       "description": "Interactive scroll experience exploring mental health, anxiety, and reaching out for support.",
       "url": "https://inside-the-smile.vercel.app/",
       "tags": ["mental-health", "interactive-story", "art"]
